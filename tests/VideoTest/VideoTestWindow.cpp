@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <PhVideo/PhVideoEncoder.h>
 
 #include "PhCommonUI/PhTimeCodeDialog.h"
 
@@ -31,6 +32,8 @@ VideoTestWindow::VideoTestWindow(VideoTestSettings *settings)
 	connect(ui->videoView, &PhGraphicView::paint, this, &VideoTestWindow::onPaint);
 	connect(ui->videoView, &PhGraphicView::beforePaint, _videoEngine.clock(), &PhClock::tick);
 	connect(_videoEngine.clock(), &PhClock::timeChanged, this, &VideoTestWindow::onTimeChanged);
+
+	on_actionConvert_to_MJPEG_triggered();
 }
 
 VideoTestWindow::~VideoTestWindow()
@@ -219,4 +222,9 @@ void VideoTestWindow::onPaint(int width, int height)
 	QString info = QString("%1 / %2").arg(videoRate).arg(_maxVideoRate);
 	ui->videoView->addInfo(info);
 	_videoEngine.drawVideo(0, 0, width, height);
+}
+
+void VideoTestWindow::on_actionConvert_to_MJPEG_triggered()
+{
+	PhVideoEncoder e();
 }

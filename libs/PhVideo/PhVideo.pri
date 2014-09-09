@@ -5,9 +5,11 @@
 
 HEADERS += \
     $$TOP_ROOT/libs/PhVideo/PhVideoEngine.h \
-    $$TOP_ROOT/libs/PhVideo/PhVideoSettings.h
+    $$TOP_ROOT/libs/PhVideo/PhVideoSettings.h \
+	$$TOP_ROOT/libs/PhVideo/PhVideoEncoder.h
 SOURCES += \
-    $$TOP_ROOT/libs/PhVideo/PhVideoEngine.cpp
+    $$TOP_ROOT/libs/PhVideo/PhVideoEngine.cpp \
+	$$TOP_ROOT/libs/PhVideo/PhVideoEncoder.cpp
 
 # Windows specific
 win32{
@@ -37,7 +39,7 @@ win32{
 # Unix specific
 unix {
 	INCLUDEPATH += /usr/local/include
-	LIBS += -L/usr/local/lib -lavformat -lavcodec -lavutil -lswscale
+	LIBS += -L/usr/local/lib -lavformat -lavcodec -lavutil -lswscale -lavfilter
 }
 
 # Ubuntu specific

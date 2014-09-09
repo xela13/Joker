@@ -79,6 +79,8 @@ private slots:
 	void onTimeChanged(PhTime time);
 
 	void onPaint(int width, int height);
+	void on_actionConvert_to_MJPEG_triggered();
+
 private:
 
 	Ui::VideoTestWindow *ui;
