@@ -196,8 +196,11 @@ int PhVideoEncoder::open_output_file(const char *filename)
 		enc_ctx = out_stream->codec;
 		if (dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO
 				|| dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
-			/* in this example, we choose transcoding to same codec */
-			encoder = avcodec_find_encoder(dec_ctx->codec_id);
+			// In case of video stream, force MJPEG codec
+			if(dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO)
+				encoder = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
+			else
+				encoder = avcodec_find_encoder(dec_ctx->codec_id);
 			/* In this example, we transcode to same properties (picture size,
 * sample rate etc.). These properties can be changed for output
 * streams easily using filters */
