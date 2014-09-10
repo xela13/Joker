@@ -226,5 +226,6 @@ void VideoTestWindow::onPaint(int width, int height)
 
 void VideoTestWindow::on_actionConvert_to_MJPEG_triggered()
 {
-	PhVideoEncoder e();
+	PHDEBUG << _settings->currentDocument();
+	PhVideoEncoder e(_settings->currentDocument());
 }

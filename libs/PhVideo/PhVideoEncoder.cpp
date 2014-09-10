@@ -1,31 +1,33 @@
 /*
-* Copyright (c) 2010 Nicolas George
-* Copyright (c) 2011 Stefano Sabatini
-* Copyright (c) 2014 Andrey Utkin
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-* THE SOFTWARE.
-*/
+ * Copyright (c) 2010 Nicolas George
+ * Copyright (c) 2011 Stefano Sabatini
+ * Copyright (c) 2014 Andrey Utkin
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 #include "PhVideoEncoder.h"
 
+#include "PhSync/PhTimeCode.h"
 
-PhVideoEncoder::PhVideoEncoder(QString inputFile)
+
+PhVideoEncoder::PhVideoEncoder(QString inputFile) : currentFrame(0)
 {
 	QString outputFile = inputFile.split(".").first() + "_MJPEG." + inputFile.split(".").last();
 
@@ -48,8 +50,10 @@ PhVideoEncoder::PhVideoEncoder(QString inputFile)
 		goto end;
 	/* read all packets */
 	while (1) {
-		if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0)
+		if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0) {
+			PHDEBUG << "out at read frame";
 			break;
+		}
 		stream_index = packet.stream_index;
 		type = ifmt_ctx->streams[packet.stream_index]->codec->codec_type;
 		av_log(NULL, AV_LOG_DEBUG, "Demuxer gave frame of stream_index %u\n", stream_index);
@@ -58,20 +62,23 @@ PhVideoEncoder::PhVideoEncoder(QString inputFile)
 			frame = av_frame_alloc();
 			if (!frame) {
 				ret = AVERROR(ENOMEM);
-				break;
+				{
+					PHDEBUG << "frame alloc error";
+					break;
+				}
 			}
 			packet.dts = av_rescale_q_rnd(packet.dts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ifmt_ctx->streams[stream_index]->codec->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ifmt_ctx->streams[stream_index]->codec->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ifmt_ctx->streams[stream_index]->codec->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ifmt_ctx->streams[stream_index]->codec->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			dec_func = (type == AVMEDIA_TYPE_VIDEO) ? avcodec_decode_video2 :
-													  avcodec_decode_audio4;
+			           avcodec_decode_audio4;
 			ret = dec_func(ifmt_ctx->streams[stream_index]->codec, frame,
-						   &got_frame, &packet);
+			               &got_frame, &packet);
 			if (ret < 0) {
 				av_frame_free(&frame);
 				av_log(NULL, AV_LOG_ERROR, "Decoding failed\n");
@@ -81,24 +88,30 @@ PhVideoEncoder::PhVideoEncoder(QString inputFile)
 				frame->pts = av_frame_get_best_effort_timestamp(frame);
 				ret = filter_encode_write_frame(frame, stream_index);
 				av_frame_free(&frame);
-				if (ret < 0)
+				if (ret < 0) {
+					PHDEBUG << "filter encode write error";
 					goto end;
-			} else {
+				}
+			}
+			else {
 				av_frame_free(&frame);
 			}
-		} else {
+		}
+		else {
 			/* remux this frame without reencoding */
 			packet.dts = av_rescale_q_rnd(packet.dts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ofmt_ctx->streams[stream_index]->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ofmt_ctx->streams[stream_index]->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ofmt_ctx->streams[stream_index]->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ofmt_ctx->streams[stream_index]->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			ret = av_interleaved_write_frame(ofmt_ctx, &packet);
-			if (ret < 0)
+			if (ret < 0) {
+				PHDEBUG << "av interleaved frame error";
 				goto end;
+			}
 		}
 		av_free_packet(&packet);
 	}
@@ -158,10 +171,10 @@ int PhVideoEncoder::open_input_file(const char *filename)
 		codec_ctx = stream->codec;
 		/* Reencode video & audio and remux subtitles etc. */
 		if (codec_ctx->codec_type == AVMEDIA_TYPE_VIDEO
-				|| codec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+		    || codec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
 			/* Open decoder */
 			ret = avcodec_open2(codec_ctx,
-								avcodec_find_decoder(codec_ctx->codec_id), NULL);
+			                    avcodec_find_decoder(codec_ctx->codec_id), NULL);
 			if (ret < 0) {
 				av_log(NULL, AV_LOG_ERROR, "Failed to open decoder for stream #%u\n", i);
 				return ret;
@@ -195,16 +208,12 @@ int PhVideoEncoder::open_output_file(const char *filename)
 		dec_ctx = in_stream->codec;
 		enc_ctx = out_stream->codec;
 		if (dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO
-				|| dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
-			// In case of video stream, force MJPEG codec
-			if(dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO)
-				encoder = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
-			else
-				encoder = avcodec_find_encoder(dec_ctx->codec_id);
+		    || dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
 			/* In this example, we transcode to same properties (picture size,
-* sample rate etc.). These properties can be changed for output
-* streams easily using filters */
+			 * sample rate etc.). These properties can be changed for output
+			 * streams easily using filters */
 			if (dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+				encoder = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
 				enc_ctx->height = dec_ctx->height;
 				enc_ctx->width = dec_ctx->width;
 				enc_ctx->sample_aspect_ratio = dec_ctx->sample_aspect_ratio;
@@ -212,7 +221,10 @@ int PhVideoEncoder::open_output_file(const char *filename)
 				enc_ctx->pix_fmt = encoder->pix_fmts[0];
 				/* video time_base can be set to whatever is handy and supported by encoder */
 				enc_ctx->time_base = dec_ctx->time_base;
-			} else {
+				enc_ctx->bit_rate = dec_ctx->bit_rate * 8;
+			}
+			else {
+				encoder = avcodec_find_encoder(AV_CODEC_ID_MP3);
 				enc_ctx->sample_rate = dec_ctx->sample_rate;
 				enc_ctx->channel_layout = dec_ctx->channel_layout;
 				enc_ctx->channels = av_get_channel_layout_nb_channels(enc_ctx->channel_layout);
@@ -226,13 +238,15 @@ int PhVideoEncoder::open_output_file(const char *filename)
 				av_log(NULL, AV_LOG_ERROR, "Cannot open video encoder for stream #%u\n", i);
 				return ret;
 			}
-		} else if (dec_ctx->codec_type == AVMEDIA_TYPE_UNKNOWN) {
+		}
+		else if (dec_ctx->codec_type == AVMEDIA_TYPE_UNKNOWN) {
 			av_log(NULL, AV_LOG_FATAL, "Elementary stream #%d is of unknown type, cannot proceed\n", i);
 			return AVERROR_INVALIDDATA;
-		} else {
+		}
+		else {
 			/* if this stream must be remuxed */
 			ret = avcodec_copy_context(ofmt_ctx->streams[i]->codec,
-									   ifmt_ctx->streams[i]->codec);
+			                           ifmt_ctx->streams[i]->codec);
 			if (ret < 0) {
 				av_log(NULL, AV_LOG_ERROR, "Copying stream context failed\n");
 				return ret;
@@ -281,31 +295,32 @@ int PhVideoEncoder::init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx,
 			goto end;
 		}
 		snprintf(args, sizeof(args),
-				 "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-				 dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt,
-				 dec_ctx->time_base.num, dec_ctx->time_base.den,
-				 dec_ctx->sample_aspect_ratio.num,
-				 dec_ctx->sample_aspect_ratio.den);
+		         "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+		         dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt,
+		         dec_ctx->time_base.num, dec_ctx->time_base.den,
+		         dec_ctx->sample_aspect_ratio.num,
+		         dec_ctx->sample_aspect_ratio.den);
 		ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
-										   args, NULL, filter_graph);
+		                                   args, NULL, filter_graph);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot create buffer source\n");
 			goto end;
 		}
 		ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
-										   NULL, NULL, filter_graph);
+		                                   NULL, NULL, filter_graph);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot create buffer sink\n");
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "pix_fmts",
-							 (uint8_t*)&enc_ctx->pix_fmt, sizeof(enc_ctx->pix_fmt),
-							 AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->pix_fmt, sizeof(enc_ctx->pix_fmt),
+		                     AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot set output pixel format\n");
 			goto end;
 		}
-	} else if (dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+	}
+	else if (dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
 		buffersrc = avfilter_get_by_name("abuffer");
 		buffersink = avfilter_get_by_name("abuffersink");
 		if (!buffersrc || !buffersink) {
@@ -315,46 +330,47 @@ int PhVideoEncoder::init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx,
 		}
 		if (!dec_ctx->channel_layout)
 			dec_ctx->channel_layout =
-					av_get_default_channel_layout(dec_ctx->channels);
+			    av_get_default_channel_layout(dec_ctx->channels);
 		snprintf(args, sizeof(args),
-				 "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
-				 dec_ctx->time_base.num, dec_ctx->time_base.den, dec_ctx->sample_rate,
-				 av_get_sample_fmt_name(dec_ctx->sample_fmt),
-				 dec_ctx->channel_layout);
+		         "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
+		         dec_ctx->time_base.num, dec_ctx->time_base.den, dec_ctx->sample_rate,
+		         av_get_sample_fmt_name(dec_ctx->sample_fmt),
+		         dec_ctx->channel_layout);
 		ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
-										   args, NULL, filter_graph);
+		                                   args, NULL, filter_graph);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer source\n");
 			goto end;
 		}
 		ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
-										   NULL, NULL, filter_graph);
+		                                   NULL, NULL, filter_graph);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "sample_fmts",
-							 (uint8_t*)&enc_ctx->sample_fmt, sizeof(enc_ctx->sample_fmt),
-							 AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->sample_fmt, sizeof(enc_ctx->sample_fmt),
+		                     AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot set output sample format\n");
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "channel_layouts",
-							 (uint8_t*)&enc_ctx->channel_layout,
-							 sizeof(enc_ctx->channel_layout), AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->channel_layout,
+		                     sizeof(enc_ctx->channel_layout), AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot set output channel layout\n");
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "sample_rates",
-							 (uint8_t*)&enc_ctx->sample_rate, sizeof(enc_ctx->sample_rate),
-							 AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->sample_rate, sizeof(enc_ctx->sample_rate),
+		                     AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			av_log(NULL, AV_LOG_ERROR, "Cannot set output sample rate\n");
 			goto end;
 		}
-	} else {
+	}
+	else {
 		ret = AVERROR_UNKNOWN;
 		goto end;
 	}
@@ -372,7 +388,7 @@ int PhVideoEncoder::init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx,
 		goto end;
 	}
 	if ((ret = avfilter_graph_parse_ptr(filter_graph, filter_spec,
-										&inputs, &outputs, NULL)) < 0)
+	                                    &inputs, &outputs, NULL)) < 0)
 		goto end;
 	if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0)
 		goto end;
@@ -398,14 +414,14 @@ int PhVideoEncoder::init_filters(void)
 		filter_ctx[i].buffersink_ctx = NULL;
 		filter_ctx[i].filter_graph = NULL;
 		if (!(ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO
-			  || ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO))
+		      || ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO))
 			continue;
 		if (ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
 			filter_spec = "null"; /* passthrough (dummy) filter for video */
 		else
 			filter_spec = "anull"; /* passthrough (dummy) filter for audio */
 		ret = init_filter(&filter_ctx[i], ifmt_ctx->streams[i]->codec,
-						  ofmt_ctx->streams[i]->codec, filter_spec);
+		                  ofmt_ctx->streams[i]->codec, filter_spec);
 		if (ret)
 			return ret;
 	}
@@ -416,17 +432,29 @@ int PhVideoEncoder::encode_write_frame(AVFrame *filt_frame, unsigned int stream_
 	int got_frame_local;
 	AVPacket enc_pkt;
 	int (*enc_func)(AVCodecContext *, AVPacket *, const AVFrame *, int *) =
-			(ifmt_ctx->streams[stream_index]->codec->codec_type ==
-			 AVMEDIA_TYPE_VIDEO) ? avcodec_encode_video2 : avcodec_encode_audio2;
+	    (ifmt_ctx->streams[stream_index]->codec->codec_type ==
+	     AVMEDIA_TYPE_VIDEO) ? avcodec_encode_video2 : avcodec_encode_audio2;
 	if (!got_frame)
 		got_frame = &got_frame_local;
-	av_log(NULL, AV_LOG_INFO, "Encoding frame\n");
+
+	float fps = 0.0;
+	for (uint i = 0; i < ifmt_ctx->nb_streams; i++) {
+		if(ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+			fps = (ifmt_ctx->streams[i]->avg_frame_rate.num / ifmt_ctx->streams[i]->avg_frame_rate.den);
+		}
+	}
+	if(currentFrame % 100 == 0)
+		PHDEBUG << "frame" << currentFrame << PhTimeCode::stringFromFrame(currentFrame, PhTimeCode::computeTimeCodeType(fps)) << "/" << "?";
+	//<< PhTimeCode::stringFromFrame((ifmt_ctx->duration/1000000), PhTimeCode::computeTimeCodeType(fps));
+	currentFrame++;
+
+
 	/* encode filtered frame */
 	enc_pkt.data = NULL;
 	enc_pkt.size = 0;
 	av_init_packet(&enc_pkt);
 	ret = enc_func(ofmt_ctx->streams[stream_index]->codec, &enc_pkt,
-				   filt_frame, got_frame);
+	               filt_frame, got_frame);
 	av_frame_free(&filt_frame);
 	if (ret < 0)
 		return ret;
@@ -435,16 +463,16 @@ int PhVideoEncoder::encode_write_frame(AVFrame *filt_frame, unsigned int stream_
 	/* prepare packet for muxing */
 	enc_pkt.stream_index = stream_index;
 	enc_pkt.dts = av_rescale_q_rnd(enc_pkt.dts,
-								   ofmt_ctx->streams[stream_index]->codec->time_base,
-								   ofmt_ctx->streams[stream_index]->time_base,
-								   (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+	                               ofmt_ctx->streams[stream_index]->codec->time_base,
+	                               ofmt_ctx->streams[stream_index]->time_base,
+	                               (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 	enc_pkt.pts = av_rescale_q_rnd(enc_pkt.pts,
-								   ofmt_ctx->streams[stream_index]->codec->time_base,
-								   ofmt_ctx->streams[stream_index]->time_base,
-								   (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+	                               ofmt_ctx->streams[stream_index]->codec->time_base,
+	                               ofmt_ctx->streams[stream_index]->time_base,
+	                               (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 	enc_pkt.duration = av_rescale_q(enc_pkt.duration,
-									ofmt_ctx->streams[stream_index]->codec->time_base,
-									ofmt_ctx->streams[stream_index]->time_base);
+	                                ofmt_ctx->streams[stream_index]->codec->time_base,
+	                                ofmt_ctx->streams[stream_index]->time_base);
 	av_log(NULL, AV_LOG_DEBUG, "Muxing frame\n");
 	/* mux encoded frame */
 	ret = av_interleaved_write_frame(ofmt_ctx, &enc_pkt);
@@ -454,10 +482,10 @@ int PhVideoEncoder::filter_encode_write_frame(AVFrame *frame, unsigned int strea
 {
 	int ret;
 	AVFrame *filt_frame;
-	av_log(NULL, AV_LOG_INFO, "Pushing decoded frame to filters\n");
+	//av_log(NULL, AV_LOG_INFO, "Pushing decoded frame to filters\n");
 	/* push the decoded frame into the filtergraph */
 	ret = av_buffersrc_add_frame_flags(filter_ctx[stream_index].buffersrc_ctx,
-									   frame, 0);
+	                                   frame, 0);
 	if (ret < 0) {
 		av_log(NULL, AV_LOG_ERROR, "Error while feeding the filtergraph\n");
 		return ret;
@@ -469,14 +497,14 @@ int PhVideoEncoder::filter_encode_write_frame(AVFrame *frame, unsigned int strea
 			ret = AVERROR(ENOMEM);
 			break;
 		}
-		av_log(NULL, AV_LOG_INFO, "Pulling filtered frame from filters\n");
+		//av_log(NULL, AV_LOG_INFO, "Pulling filtered frame from filters\n");
 		ret = av_buffersink_get_frame(filter_ctx[stream_index].buffersink_ctx,
-									  filt_frame);
+		                              filt_frame);
 		if (ret < 0) {
 			/* if no more frames for output - returns AVERROR(EAGAIN)
-* if flushed and no more frames for output - returns AVERROR_EOF
-* rewrite retcode to 0 to show it as normal procedure completion
-*/
+			 * if flushed and no more frames for output - returns AVERROR_EOF
+			 * rewrite retcode to 0 to show it as normal procedure completion
+			 */
 			if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
 				ret = 0;
 			av_frame_free(&filt_frame);
@@ -494,7 +522,7 @@ int PhVideoEncoder::flush_encoder(unsigned int stream_index)
 	int ret;
 	int got_frame;
 	if (!(ofmt_ctx->streams[stream_index]->codec->codec->capabilities &
-		  CODEC_CAP_DELAY))
+	      CODEC_CAP_DELAY))
 		return 0;
 	while (1) {
 		av_log(NULL, AV_LOG_INFO, "Flushing stream #%u encoder\n", stream_index);

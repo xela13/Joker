@@ -53,6 +53,8 @@ private:
 	int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index);
 	int flush_encoder(unsigned int stream_index);
 
+	int currentFrame;
+
 };
 
 #endif // PHVIDEOENCODER_H
