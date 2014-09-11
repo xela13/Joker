@@ -6,9 +6,7 @@
 
 #include <QProgressDialog>
 #include <QMessageBox>
-
 #include "PhVideoEngine.h"
-
 
 PhVideoEngine::PhVideoEngine(PhVideoSettings *settings) :
 	_settings(settings),
