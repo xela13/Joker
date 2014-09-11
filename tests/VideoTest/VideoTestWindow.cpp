@@ -33,7 +33,6 @@ VideoTestWindow::VideoTestWindow(VideoTestSettings *settings)
 	connect(ui->videoView, &PhGraphicView::beforePaint, _videoEngine.clock(), &PhClock::tick);
 	connect(_videoEngine.clock(), &PhClock::timeChanged, this, &VideoTestWindow::onTimeChanged);
 
-	on_actionConvert_to_MJPEG_triggered();
 }
 
 VideoTestWindow::~VideoTestWindow()
@@ -226,6 +225,5 @@ void VideoTestWindow::onPaint(int width, int height)
 
 void VideoTestWindow::on_actionConvert_to_MJPEG_triggered()
 {
-	PHDEBUG << _settings->currentDocument();
-	PhVideoEncoder e(_settings->currentDocument());
+	_videoEngine.startEncoder();
 }

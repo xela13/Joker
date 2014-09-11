@@ -19,6 +19,15 @@ extern "C" {
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
+
+#include <libavfilter/avfiltergraph.h>
+#include <libavfilter/avcodec.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/opt.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/pixdesc.h>
+
 }
 
 #include <QObject>
@@ -29,6 +38,12 @@ extern "C" {
 #include "PhGraphic/PhGraphicTexturedRect.h"
 
 #include "PhVideoSettings.h"
+
+typedef struct FilteringContext {
+	AVFilterContext *buffersink_ctx;
+	AVFilterContext *buffersrc_ctx;
+	AVFilterGraph *filter_graph;
+} FilteringContext;
 
 /**
  * @brief The video engine
@@ -211,6 +226,11 @@ public:
 	 */
 	void drawVideo(int x, int y, int w, int h);
 
+	/**
+	 * @brief Start the encoder
+	 */
+	void startEncoder();
+
 signals:
 	/**
 	 * @brief Signal sent upon a different timecode type message
@@ -244,6 +264,26 @@ private:
 	bool _deinterlace;
 
 	uint8_t * _rgb;
+
+
+	// Encoder stuff
+	AVFormatContext *ifmt_ctx;
+	AVFormatContext *ofmt_ctx;
+	FilteringContext *filter_ctx;
+	int _currentEncodedFrame;
+
+	int open_input_file(const char *filename);
+	int open_output_file(const char *filename);
+	int init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char *filter_spec);
+	int init_filters(void);
+	int encode_write_frame(AVFrame *filt_frame, unsigned int stream_index, int *got_frame);
+	int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index);
+	int flush_encoder(unsigned int stream_index);
+
+
+
+
+
 };
 
 #endif // PHVIDEOENGINE_H
