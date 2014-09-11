@@ -25,7 +25,6 @@ extern "C" {
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #include <libavutil/opt.h>
-#include <libavutil/imgutils.h>
 #include <libavutil/pixdesc.h>
 
 }
@@ -39,11 +38,6 @@ extern "C" {
 
 #include "PhVideoSettings.h"
 
-typedef struct FilteringContext {
-	AVFilterContext *buffersink_ctx;
-	AVFilterContext *buffersrc_ctx;
-	AVFilterGraph *filter_graph;
-} FilteringContext;
 
 /**
  * @brief The video engine
@@ -239,6 +233,12 @@ signals:
 	void timeCodeTypeChanged(PhTimeCodeType tcType);
 
 private:
+	typedef struct FilteringContext {
+		AVFilterContext *buffersink_ctx;
+		AVFilterContext *buffersrc_ctx;
+		AVFilterGraph *filter_graph;
+	} FilteringContext;
+
 	bool decodeFrame(PhFrame frame);
 	int64_t frame2time(PhFrame f);
 	PhFrame time2frame(int64_t t);
@@ -265,7 +265,6 @@ private:
 
 	uint8_t * _rgb;
 
-
 	// Encoder stuff
 	AVFormatContext *ifmt_ctx;
 	AVFormatContext *ofmt_ctx;
@@ -279,10 +278,6 @@ private:
 	int encode_write_frame(AVFrame *filt_frame, unsigned int stream_index, int *got_frame);
 	int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index);
 	int flush_encoder(unsigned int stream_index);
-
-
-
-
 
 };
 

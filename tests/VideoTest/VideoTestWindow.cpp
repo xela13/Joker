@@ -6,7 +6,6 @@
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <PhVideo/PhVideoEncoder.h>
 
 #include "PhCommonUI/PhTimeCodeDialog.h"
 
@@ -226,4 +225,5 @@ void VideoTestWindow::onPaint(int width, int height)
 void VideoTestWindow::on_actionConvert_to_MJPEG_triggered()
 {
 	_videoEngine.startEncoder();
+	setWindowTitle(_videoEngine.fileName());
 }

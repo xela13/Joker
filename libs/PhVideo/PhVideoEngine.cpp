@@ -4,7 +4,11 @@
  * @license http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
+#include <QProgressDialog>
+#include <QMessageBox>
+
 #include "PhVideoEngine.h"
+
 
 PhVideoEngine::PhVideoEngine(PhVideoSettings *settings) :
 	_settings(settings),
@@ -386,9 +390,14 @@ PhFrame PhVideoEngine::time2frame(int64_t t)
 
 void PhVideoEngine::startEncoder()
 {
-
 	_currentEncodedFrame = 0;
+	QString timeOut = PhTimeCode::stringFromFrame(_frameIn + frameLength(), PhTimeCode::computeTimeCodeType(framePerSecond()));
 	QString outputFile = _fileName.split(".").first() + "_MJPEG." + _fileName.split(".").last();
+	QProgressDialog progressionDialog;
+	progressionDialog.show();
+	progressionDialog.setGeometry(progressionDialog.x(), progressionDialog.y(), 600, progressionDialog.height());
+	progressionDialog.setMinimum(0);
+	progressionDialog.setMaximum(frameLength());
 
 	int ret;
 	AVPacket packet = { .data = NULL, .size = 0 };
@@ -406,6 +415,7 @@ void PhVideoEngine::startEncoder()
 		goto end;
 	if ((ret = init_filters()) < 0)
 		goto end;
+
 	/* read all packets */
 	while (1) {
 		if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0) {
@@ -424,17 +434,17 @@ void PhVideoEngine::startEncoder()
 				}
 			}
 			packet.dts = av_rescale_q_rnd(packet.dts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ifmt_ctx->streams[stream_index]->codec->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ifmt_ctx->streams[stream_index]->codec->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ifmt_ctx->streams[stream_index]->codec->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ifmt_ctx->streams[stream_index]->codec->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			dec_func = (type == AVMEDIA_TYPE_VIDEO) ? avcodec_decode_video2 :
-					   avcodec_decode_audio4;
+			           avcodec_decode_audio4;
 			ret = dec_func(ifmt_ctx->streams[stream_index]->codec, frame,
-						   &got_frame, &packet);
+			               &got_frame, &packet);
 			if (ret < 0) {
 				av_frame_free(&frame);
 				PHDEBUG <<  "Decoding failed";
@@ -444,15 +454,16 @@ void PhVideoEngine::startEncoder()
 				frame->pts = av_frame_get_best_effort_timestamp(frame);
 				ret = filter_encode_write_frame(frame, stream_index);
 
-				if(type == AVMEDIA_TYPE_VIDEO)
-				{
-					if(_currentEncodedFrame % 100 == 0)
-					{
-
-						PHDEBUG << "frame" << _currentEncodedFrame << PhTimeCode::stringFromFrame(_currentEncodedFrame, PhTimeCode::computeTimeCodeType(framePerSecond())) << "/" //<< "?";
-								<< PhTimeCode::stringFromFrame(frameLength(), PhTimeCode::computeTimeCodeType(framePerSecond()));
+				if(type == AVMEDIA_TYPE_VIDEO) {
+					if(_currentEncodedFrame % 10 == 0) {
+						progressionDialog.setValue(_currentEncodedFrame);
+						progressionDialog.setLabelText(PhTimeCode::stringFromFrame(_frameIn + _currentEncodedFrame, PhTimeCode::computeTimeCodeType(framePerSecond()))
+						                               + "/" + timeOut);
+						QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
 					}
 					_currentEncodedFrame++;
+					if(progressionDialog.wasCanceled())
+						goto end;
 				}
 
 				av_frame_free(&frame);
@@ -468,13 +479,13 @@ void PhVideoEngine::startEncoder()
 		else {
 			/* remux this frame without reencoding */
 			packet.dts = av_rescale_q_rnd(packet.dts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ofmt_ctx->streams[stream_index]->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ofmt_ctx->streams[stream_index]->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
-										  ifmt_ctx->streams[stream_index]->time_base,
-										  ofmt_ctx->streams[stream_index]->time_base,
-										  (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+			                              ifmt_ctx->streams[stream_index]->time_base,
+			                              ofmt_ctx->streams[stream_index]->time_base,
+			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			ret = av_interleaved_write_frame(ofmt_ctx, &packet);
 			if (ret < 0) {
 				PHDEBUG << "av interleaved frame error";
@@ -505,9 +516,8 @@ end:
 	av_free_packet(&packet);
 	av_frame_free(&frame);
 	for (i = 0; i < ifmt_ctx->nb_streams; i++) {
-//		avcodec_close(ifmt_ctx->streams[i]->codec);
-//		if (ofmt_ctx && ofmt_ctx->nb_streams > i && ofmt_ctx->streams[i] && ofmt_ctx->streams[i]->codec)
-//			avcodec_close(ofmt_ctx->streams[i]->codec);
+		if (ofmt_ctx && ofmt_ctx->nb_streams > i && ofmt_ctx->streams[i] && ofmt_ctx->streams[i]->codec)
+			avcodec_close(ofmt_ctx->streams[i]->codec);
 		if (filter_ctx && filter_ctx[i].filter_graph)
 			avfilter_graph_free(&filter_ctx[i].filter_graph);
 	}
@@ -518,6 +528,17 @@ end:
 	avformat_free_context(ofmt_ctx);
 	if (ret < 0)
 		PHDEBUG <<  "Error occurred:" << av_err2str(ret);
+	else {
+		progressionDialog.setValue(progressionDialog.maximum());
+		QMessageBox msgBox;
+		msgBox.setText("Conversion succeed");
+		msgBox.setInformativeText("Do you want to load the new MJPEG file ?\n" + outputFile);
+		msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+		msgBox.setDefaultButton(QMessageBox::Yes);
+		if(msgBox.exec() == QMessageBox::Yes) {
+			open(outputFile);
+		}
+	}
 }
 
 int PhVideoEngine::open_input_file(const char *filename)
@@ -540,10 +561,10 @@ int PhVideoEngine::open_input_file(const char *filename)
 		codec_ctx = stream->codec;
 		/* Reencode video & audio and remux subtitles etc. */
 		if (codec_ctx->codec_type == AVMEDIA_TYPE_VIDEO
-			|| codec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+		    || codec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
 			/* Open decoder */
 			ret = avcodec_open2(codec_ctx,
-								avcodec_find_decoder(codec_ctx->codec_id), NULL);
+			                    avcodec_find_decoder(codec_ctx->codec_id), NULL);
 			if (ret < 0) {
 				PHDEBUG << "Failed to open decoder for stream #" << i;
 				return ret;
@@ -577,7 +598,7 @@ int PhVideoEngine::open_output_file(const char *filename)
 		dec_ctx = in_stream->codec;
 		enc_ctx = out_stream->codec;
 		if (dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO
-			|| dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+		    || dec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
 			/* In this example, we transcode to same properties (picture size,
 			 * sample rate etc.). These properties can be changed for output
 			 * streams easily using filters */
@@ -615,7 +636,7 @@ int PhVideoEngine::open_output_file(const char *filename)
 		else {
 			/* if this stream must be remuxed */
 			ret = avcodec_copy_context(ofmt_ctx->streams[i]->codec,
-									   ifmt_ctx->streams[i]->codec);
+			                           ifmt_ctx->streams[i]->codec);
 			if (ret < 0) {
 				PHDEBUG <<  "Copying stream context failed";
 				return ret;
@@ -664,26 +685,26 @@ int PhVideoEngine::init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, 
 			goto end;
 		}
 		snprintf(args, sizeof(args),
-				 "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-				 dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt,
-				 dec_ctx->time_base.num, dec_ctx->time_base.den,
-				 dec_ctx->sample_aspect_ratio.num,
-				 dec_ctx->sample_aspect_ratio.den);
+		         "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+		         dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt,
+		         dec_ctx->time_base.num, dec_ctx->time_base.den,
+		         dec_ctx->sample_aspect_ratio.num,
+		         dec_ctx->sample_aspect_ratio.den);
 		ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
-										   args, NULL, filter_graph);
+		                                   args, NULL, filter_graph);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot create buffer source";
 			goto end;
 		}
 		ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
-										   NULL, NULL, filter_graph);
+		                                   NULL, NULL, filter_graph);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot create buffer sink";
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "pix_fmts",
-							 (uint8_t*)&enc_ctx->pix_fmt, sizeof(enc_ctx->pix_fmt),
-							 AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->pix_fmt, sizeof(enc_ctx->pix_fmt),
+		                     AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot set output pixel format";
 			goto end;
@@ -699,41 +720,41 @@ int PhVideoEngine::init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, 
 		}
 		if (!dec_ctx->channel_layout)
 			dec_ctx->channel_layout =
-				av_get_default_channel_layout(dec_ctx->channels);
+			    av_get_default_channel_layout(dec_ctx->channels);
 		snprintf(args, sizeof(args),
-				 "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
-				 dec_ctx->time_base.num, dec_ctx->time_base.den, dec_ctx->sample_rate,
-				 av_get_sample_fmt_name(dec_ctx->sample_fmt),
-				 dec_ctx->channel_layout);
+		         "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
+		         dec_ctx->time_base.num, dec_ctx->time_base.den, dec_ctx->sample_rate,
+		         av_get_sample_fmt_name(dec_ctx->sample_fmt),
+		         dec_ctx->channel_layout);
 		ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
-										   args, NULL, filter_graph);
+		                                   args, NULL, filter_graph);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot create audio buffer source";
 			goto end;
 		}
 		ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
-										   NULL, NULL, filter_graph);
+		                                   NULL, NULL, filter_graph);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot create audio buffer sink";
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "sample_fmts",
-							 (uint8_t*)&enc_ctx->sample_fmt, sizeof(enc_ctx->sample_fmt),
-							 AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->sample_fmt, sizeof(enc_ctx->sample_fmt),
+		                     AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot set output sample format";
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "channel_layouts",
-							 (uint8_t*)&enc_ctx->channel_layout,
-							 sizeof(enc_ctx->channel_layout), AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->channel_layout,
+		                     sizeof(enc_ctx->channel_layout), AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot set output channel layout";
 			goto end;
 		}
 		ret = av_opt_set_bin(buffersink_ctx, "sample_rates",
-							 (uint8_t*)&enc_ctx->sample_rate, sizeof(enc_ctx->sample_rate),
-							 AV_OPT_SEARCH_CHILDREN);
+		                     (uint8_t*)&enc_ctx->sample_rate, sizeof(enc_ctx->sample_rate),
+		                     AV_OPT_SEARCH_CHILDREN);
 		if (ret < 0) {
 			PHDEBUG <<  "Cannot set output sample rate";
 			goto end;
@@ -757,7 +778,7 @@ int PhVideoEngine::init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, 
 		goto end;
 	}
 	if ((ret = avfilter_graph_parse_ptr(filter_graph, filter_spec,
-										&inputs, &outputs, NULL)) < 0)
+	                                    &inputs, &outputs, NULL)) < 0)
 		goto end;
 	if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0)
 		goto end;
@@ -783,14 +804,14 @@ int PhVideoEngine::init_filters(void)
 		filter_ctx[i].buffersink_ctx = NULL;
 		filter_ctx[i].filter_graph = NULL;
 		if (!(ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO
-			  || ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO))
+		      || ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO))
 			continue;
 		if (ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
 			filter_spec = "null"; /* passthrough (dummy) filter for video */
 		else
 			filter_spec = "anull"; /* passthrough (dummy) filter for audio */
 		ret = init_filter(&filter_ctx[i], ifmt_ctx->streams[i]->codec,
-						  ofmt_ctx->streams[i]->codec, filter_spec);
+		                  ofmt_ctx->streams[i]->codec, filter_spec);
 		if (ret)
 			return ret;
 	}
@@ -801,8 +822,8 @@ int PhVideoEngine::encode_write_frame(AVFrame *filt_frame, unsigned int stream_i
 	int got_frame_local;
 	AVPacket enc_pkt;
 	int (*enc_func)(AVCodecContext *, AVPacket *, const AVFrame *, int *) =
-		(ifmt_ctx->streams[stream_index]->codec->codec_type ==
-		 AVMEDIA_TYPE_VIDEO) ? avcodec_encode_video2 : avcodec_encode_audio2;
+	    (ifmt_ctx->streams[stream_index]->codec->codec_type ==
+	     AVMEDIA_TYPE_VIDEO) ? avcodec_encode_video2 : avcodec_encode_audio2;
 	if (!got_frame)
 		got_frame = &got_frame_local;
 
@@ -811,7 +832,7 @@ int PhVideoEngine::encode_write_frame(AVFrame *filt_frame, unsigned int stream_i
 	enc_pkt.size = 0;
 	av_init_packet(&enc_pkt);
 	ret = enc_func(ofmt_ctx->streams[stream_index]->codec, &enc_pkt,
-				   filt_frame, got_frame);
+	               filt_frame, got_frame);
 	av_frame_free(&filt_frame);
 	if (ret < 0)
 		return ret;
@@ -820,16 +841,16 @@ int PhVideoEngine::encode_write_frame(AVFrame *filt_frame, unsigned int stream_i
 	/* prepare packet for muxing */
 	enc_pkt.stream_index = stream_index;
 	enc_pkt.dts = av_rescale_q_rnd(enc_pkt.dts,
-								   ofmt_ctx->streams[stream_index]->codec->time_base,
-								   ofmt_ctx->streams[stream_index]->time_base,
-								   (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+	                               ofmt_ctx->streams[stream_index]->codec->time_base,
+	                               ofmt_ctx->streams[stream_index]->time_base,
+	                               (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 	enc_pkt.pts = av_rescale_q_rnd(enc_pkt.pts,
-								   ofmt_ctx->streams[stream_index]->codec->time_base,
-								   ofmt_ctx->streams[stream_index]->time_base,
-								   (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+	                               ofmt_ctx->streams[stream_index]->codec->time_base,
+	                               ofmt_ctx->streams[stream_index]->time_base,
+	                               (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 	enc_pkt.duration = av_rescale_q(enc_pkt.duration,
-									ofmt_ctx->streams[stream_index]->codec->time_base,
-									ofmt_ctx->streams[stream_index]->time_base);
+	                                ofmt_ctx->streams[stream_index]->codec->time_base,
+	                                ofmt_ctx->streams[stream_index]->time_base);
 
 	/* mux encoded frame */
 	ret = av_interleaved_write_frame(ofmt_ctx, &enc_pkt);
@@ -842,7 +863,7 @@ int PhVideoEngine::filter_encode_write_frame(AVFrame *frame, unsigned int stream
 	//PHDEBUG << AV_LOG_INFO, "Pushing decoded frame to filters";
 	/* push the decoded frame into the filtergraph */
 	ret = av_buffersrc_add_frame_flags(filter_ctx[stream_index].buffersrc_ctx,
-									   frame, 0);
+	                                   frame, 0);
 	if (ret < 0) {
 		PHDEBUG <<  "Error while feeding the filtergraph";
 		return ret;
@@ -856,7 +877,7 @@ int PhVideoEngine::filter_encode_write_frame(AVFrame *frame, unsigned int stream
 		}
 		//PHDEBUG << AV_LOG_INFO, "Pulling filtered frame from filters";
 		ret = av_buffersink_get_frame(filter_ctx[stream_index].buffersink_ctx,
-									  filt_frame);
+		                              filt_frame);
 		if (ret < 0) {
 			/* if no more frames for output - returns AVERROR(EAGAIN)
 			 * if flushed and no more frames for output - returns AVERROR_EOF
@@ -879,7 +900,7 @@ int PhVideoEngine::flush_encoder(unsigned int stream_index)
 	int ret;
 	int got_frame;
 	if (!(ofmt_ctx->streams[stream_index]->codec->codec->capabilities &
-		  CODEC_CAP_DELAY))
+	      CODEC_CAP_DELAY))
 		return 0;
 	while (1) {
 		PHDEBUG << "Flushing stream #"<< stream_index << " encoder";
