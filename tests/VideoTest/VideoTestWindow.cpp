@@ -31,7 +31,6 @@ VideoTestWindow::VideoTestWindow(VideoTestSettings *settings)
 	connect(ui->videoView, &PhGraphicView::paint, this, &VideoTestWindow::onPaint);
 	connect(ui->videoView, &PhGraphicView::beforePaint, _videoEngine.clock(), &PhClock::tick);
 	connect(_videoEngine.clock(), &PhClock::timeChanged, this, &VideoTestWindow::onTimeChanged);
-
 }
 
 VideoTestWindow::~VideoTestWindow()
