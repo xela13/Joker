@@ -360,7 +360,7 @@ void PhVideoEngine::startEncoder()
 {
 	_currentEncodedFrame = 0;
 	QString timeOut = PhTimeCode::stringFromFrame(_frameIn + frameLength(), PhTimeCode::computeTimeCodeType(framePerSecond()));
-	QString outputFile = _fileName.split(".").first() + "_MJPEG." + _fileName.split(".").last();
+	QString outputFile = _fileName.split(".").first() + "_MJPEG.mov";
 	QProgressDialog progressionDialog;
 	progressionDialog.show();
 	progressionDialog.setGeometry(progressionDialog.x(), progressionDialog.y(), 600, progressionDialog.height());
@@ -377,8 +377,6 @@ void PhVideoEngine::startEncoder()
 	int (*dec_func)(AVCodecContext *, AVFrame *, int *, const AVPacket *);
 
 	avfilter_register_all();
-//	if ((ret = open_input_file(_fileName.toStdString().c_str())) < 0)
-//		goto end;
 	if ((ret = open_output_file(outputFile.toStdString().c_str())) < 0)
 		goto end;
 	if ((ret = init_filters()) < 0)
@@ -403,11 +401,11 @@ void PhVideoEngine::startEncoder()
 			}
 			packet.dts = av_rescale_q_rnd(packet.dts,
 			                              _ifmt_ctx->streams[stream_index]->time_base,
-			                              _ifmt_ctx->streams[stream_index]->codec->time_base,
+										  _ifmt_ctx->streams[stream_index]->time_base,
 			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
 			                              _ifmt_ctx->streams[stream_index]->time_base,
-			                              _ifmt_ctx->streams[stream_index]->codec->time_base,
+										  _ifmt_ctx->streams[stream_index]->time_base,
 			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			dec_func = (type == AVMEDIA_TYPE_VIDEO) ? avcodec_decode_video2 :
 			           avcodec_decode_audio4;
@@ -431,7 +429,10 @@ void PhVideoEngine::startEncoder()
 					}
 					_currentEncodedFrame++;
 					if(progressionDialog.wasCanceled())
+					{
+						ret = -1;
 						goto end;
+					}
 				}
 
 				av_frame_free(&frame);
@@ -775,15 +776,15 @@ int PhVideoEngine::encode_write_frame(AVFrame *filt_frame, unsigned int stream_i
 	/* prepare packet for muxing */
 	enc_pkt.stream_index = stream_index;
 	enc_pkt.dts = av_rescale_q_rnd(enc_pkt.dts,
-	                               ofmt_ctx->streams[stream_index]->codec->time_base,
+								   ofmt_ctx->streams[stream_index]->time_base,
 	                               ofmt_ctx->streams[stream_index]->time_base,
 	                               (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 	enc_pkt.pts = av_rescale_q_rnd(enc_pkt.pts,
-	                               ofmt_ctx->streams[stream_index]->codec->time_base,
+								   ofmt_ctx->streams[stream_index]->time_base,
 	                               ofmt_ctx->streams[stream_index]->time_base,
 	                               (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 	enc_pkt.duration = av_rescale_q(enc_pkt.duration,
-	                                ofmt_ctx->streams[stream_index]->codec->time_base,
+									ofmt_ctx->streams[stream_index]->time_base,
 	                                ofmt_ctx->streams[stream_index]->time_base);
 
 	/* mux encoded frame */
