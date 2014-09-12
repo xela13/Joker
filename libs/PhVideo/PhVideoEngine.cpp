@@ -80,10 +80,10 @@ bool PhVideoEngine::open(QString fileName)
 		codec_ctx = stream->codec;
 		/* Reencode video & audio and remux subtitles etc. */
 		if (codec_ctx->codec_type == AVMEDIA_TYPE_VIDEO
-			|| codec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+		    || codec_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
 			/* Open decoder */
 			int ret = avcodec_open2(codec_ctx,
-								avcodec_find_decoder(codec_ctx->codec_id), NULL);
+			                        avcodec_find_decoder(codec_ctx->codec_id), NULL);
 			if (ret < 0) {
 				PHDEBUG << "Failed to open decoder for stream #" << i;
 				return false;
@@ -402,12 +402,12 @@ void PhVideoEngine::startEncoder()
 				}
 			}
 			packet.dts = av_rescale_q_rnd(packet.dts,
-										  _ifmt_ctx->streams[stream_index]->time_base,
-										  _ifmt_ctx->streams[stream_index]->codec->time_base,
+			                              _ifmt_ctx->streams[stream_index]->time_base,
+			                              _ifmt_ctx->streams[stream_index]->codec->time_base,
 			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
-										  _ifmt_ctx->streams[stream_index]->time_base,
-										  _ifmt_ctx->streams[stream_index]->codec->time_base,
+			                              _ifmt_ctx->streams[stream_index]->time_base,
+			                              _ifmt_ctx->streams[stream_index]->codec->time_base,
 			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			dec_func = (type == AVMEDIA_TYPE_VIDEO) ? avcodec_decode_video2 :
 			           avcodec_decode_audio4;
@@ -447,11 +447,11 @@ void PhVideoEngine::startEncoder()
 		else {
 			/* remux this frame without reencoding */
 			packet.dts = av_rescale_q_rnd(packet.dts,
-										  _ifmt_ctx->streams[stream_index]->time_base,
+			                              _ifmt_ctx->streams[stream_index]->time_base,
 			                              ofmt_ctx->streams[stream_index]->time_base,
 			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			packet.pts = av_rescale_q_rnd(packet.pts,
-										  _ifmt_ctx->streams[stream_index]->time_base,
+			                              _ifmt_ctx->streams[stream_index]->time_base,
 			                              ofmt_ctx->streams[stream_index]->time_base,
 			                              (AVRounding) (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 			ret = av_interleaved_write_frame(ofmt_ctx, &packet);
@@ -570,7 +570,7 @@ int PhVideoEngine::open_output_file(const char *filename)
 		else {
 			/* if this stream must be remuxed */
 			ret = avcodec_copy_context(ofmt_ctx->streams[i]->codec,
-									   _ifmt_ctx->streams[i]->codec);
+			                           _ifmt_ctx->streams[i]->codec);
 			if (ret < 0) {
 				PHDEBUG <<  "Copying stream context failed";
 				return ret;
@@ -738,7 +738,7 @@ int PhVideoEngine::init_filters(void)
 		filter_ctx[i].buffersink_ctx = NULL;
 		filter_ctx[i].filter_graph = NULL;
 		if (!(_ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO
-			  || _ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO))
+		      || _ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO))
 			continue;
 		if (_ifmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
 			filter_spec = "null"; /* passthrough (dummy) filter for video */
@@ -756,7 +756,7 @@ int PhVideoEngine::encode_write_frame(AVFrame *filt_frame, unsigned int stream_i
 	int got_frame_local;
 	AVPacket enc_pkt;
 	int (*enc_func)(AVCodecContext *, AVPacket *, const AVFrame *, int *) =
-		(_ifmt_ctx->streams[stream_index]->codec->codec_type ==
+	    (_ifmt_ctx->streams[stream_index]->codec->codec_type ==
 	     AVMEDIA_TYPE_VIDEO) ? avcodec_encode_video2 : avcodec_encode_audio2;
 	if (!got_frame)
 		got_frame = &got_frame_local;
