@@ -219,7 +219,7 @@ float PhVideoEngine::framePerSecond()
 QString PhVideoEngine::codecName()
 {
 	if(_videoStream)
-		return _videoStream->codec->codec_name;
+		return _videoStream->codec->codec->long_name;
 	return "";
 }
 
