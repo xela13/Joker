@@ -4,8 +4,6 @@
  * @license http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
-#include <QProgressDialog>
-#include <QMessageBox>
 #include "PhVideoEngine.h"
 
 PhVideoEngine::PhVideoEngine(PhVideoSettings *settings) :
@@ -356,7 +354,7 @@ PhFrame PhVideoEngine::time2frame(int64_t t)
 	return f;
 }
 
-void PhVideoEngine::startEncoder()
+bool PhVideoEngine::exportToMjpeg()
 {
 	_currentEncodedFrame = 0;
 	QString timeOut = PhTimeCode::stringFromFrame(_frameIn + frameLength(), PhTimeCode::computeTimeCodeType(framePerSecond()));
@@ -495,17 +493,13 @@ end:
 		avio_close(ofmt_ctx->pb);
 	avformat_free_context(ofmt_ctx);
 	if (ret < 0)
+	{
 		PHDEBUG <<  "Error occurred:" << av_err2str(ret);
+		return false
+	}
 	else {
 		progressionDialog.setValue(progressionDialog.maximum());
-		QMessageBox msgBox;
-		msgBox.setText("Conversion succeed");
-		msgBox.setInformativeText("Do you want to load the new MJPEG file ?\n" + outputFile);
-		msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-		msgBox.setDefaultButton(QMessageBox::Yes);
-		if(msgBox.exec() == QMessageBox::Yes) {
-			open(outputFile);
-		}
+		return true;
 	}
 }
 

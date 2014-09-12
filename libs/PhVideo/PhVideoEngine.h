@@ -221,8 +221,9 @@ public:
 
 	/**
 	 * @brief Start the encoder
+	 * @return True if export succeed, false otherwise
 	 */
-	void startEncoder();
+	bool exportToMjpeg();
 
 signals:
 	/**
@@ -230,6 +231,12 @@ signals:
 	 * @param tcType A timecode type value.
 	 */
 	void timeCodeTypeChanged(PhTimeCodeType tcType);
+
+	/**
+	 * @brief Signal sent when a frame has been exported
+	 * @param frame A frame value
+	 */
+	void frameExported(PhFrame frame);
 
 private:
 	typedef struct FilteringContext {

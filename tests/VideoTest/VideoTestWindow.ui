@@ -57,7 +57,7 @@
     <addaction name="actionOpen"/>
     <addaction name="menuOpen_recent"/>
     <addaction name="separator"/>
-    <addaction name="actionConvert_to_MJPEG"/>
+    <addaction name="actionExport_to_MJPEG"/>
    </widget>
    <widget class="QMenu" name="menuControl">
     <property name="title">
@@ -172,9 +172,12 @@
     <string>F9</string>
    </property>
   </action>
-  <action name="actionConvert_to_MJPEG">
+  <action name="actionExport_to_MJPEG">
    <property name="text">
-    <string>Convert to MJPEG</string>
+    <string>Export to MJPEG...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
  </widget>
