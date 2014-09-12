@@ -1,9 +1,6 @@
 #ifndef VIDEOTESTWINDOW_H
 #define VIDEOTESTWINDOW_H
 
-#include <QString>
-#include <QTimer>
-
 #include "PhSync/PhClock.h"
 #include "PhTools/PhDebug.h"
 
@@ -79,6 +76,9 @@ private slots:
 	void onTimeChanged(PhTime time);
 
 	void onPaint(int width, int height);
+
+	void on_actionExport_to_MJPEG_triggered();
+
 private:
 
 	Ui::VideoTestWindow *ui;

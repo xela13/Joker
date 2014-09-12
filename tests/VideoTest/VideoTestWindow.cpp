@@ -1,11 +1,9 @@
 #include "VideoTestWindow.h"
 #include "ui_VideoTestWindow.h"
 
-#include <QPushButton>
-#include <QBoxLayout>
-#include <QFileInfo>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QProgressDialog>
 
 #include "PhCommonUI/PhTimeCodeDialog.h"
 
@@ -220,3 +218,23 @@ void VideoTestWindow::onPaint(int width, int height)
 	ui->videoView->addInfo(info);
 	_videoEngine.drawVideo(0, 0, width, height);
 }
+
+void VideoTestWindow::on_actionExport_to_MJPEG_triggered()
+{
+	QString outputFile = _settings->currentDocument().split(".").first() + "_MJPEG.mov";
+	outputFile = QFileDialog::getSaveFileName(this, tr("Export..."), outputFile, "*.mov");
+	if(!outputFile.isEmpty()) {
+		QProgressDialog progressDialog(tr("Export progress :"), tr("Cancel"), 0, _videoEngine.length(), this);
+		connect(&PhVideoEngine::frameExported, )
+
+		if(_videoEngine.exportToMjpeg(outputFile))
+		{
+			int ret = QMessageBox::question(this, tr("Export succeed"), tr("Do you want to open the exported file?), QMessageBox::Yes | QMessageBox::No);
+			if(ret == QMessageBox::Yes) {
+				openDocument(outputFile);
+			}
+		}
+	}
+}
+
+

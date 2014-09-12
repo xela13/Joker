@@ -19,6 +19,13 @@ extern "C" {
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
+
+#include <libavfilter/avfiltergraph.h>
+#include <libavfilter/avcodec.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/opt.h>
+#include <libavutil/pixdesc.h>
 }
 
 #include <QObject>
@@ -29,6 +36,7 @@ extern "C" {
 #include "PhGraphic/PhGraphicTexturedRect.h"
 
 #include "PhVideoSettings.h"
+
 
 /**
  * @brief The video engine
@@ -211,6 +219,12 @@ public:
 	 */
 	void drawVideo(int x, int y, int w, int h);
 
+	/**
+	 * @brief Start the encoder
+	 * @return True if export succeed, false otherwise
+	 */
+	bool exportToMjpeg();
+
 signals:
 	/**
 	 * @brief Signal sent upon a different timecode type message
@@ -218,7 +232,19 @@ signals:
 	 */
 	void timeCodeTypeChanged(PhTimeCodeType tcType);
 
+	/**
+	 * @brief Signal sent when a frame has been exported
+	 * @param frame A frame value
+	 */
+	void frameExported(PhFrame frame);
+
 private:
+	typedef struct FilteringContext {
+		AVFilterContext *buffersink_ctx;
+		AVFilterContext *buffersrc_ctx;
+		AVFilterGraph *filter_graph;
+	} FilteringContext;
+
 	bool decodeFrame(PhFrame frame);
 	int64_t frame2time(PhFrame f);
 	PhFrame time2frame(int64_t t);
@@ -229,7 +255,6 @@ private:
 	PhClock _clock;
 	PhFrame _frameIn;
 
-	AVFormatContext * _pFormatContext;
 	AVStream *_videoStream;
 	AVFrame * _videoFrame;
 	PhGraphicTexturedRect _videoRect;
@@ -244,6 +269,20 @@ private:
 	bool _deinterlace;
 
 	uint8_t * _rgb;
+
+	// Encoder stuff
+	AVFormatContext *_ifmt_ctx;
+	AVFormatContext *ofmt_ctx;
+	FilteringContext *filter_ctx;
+	int _currentEncodedFrame;
+
+	int open_output_file(const char *filename);
+	int init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char *filter_spec);
+	int init_filters(void);
+	int encode_write_frame(AVFrame *filt_frame, unsigned int stream_index, int *got_frame);
+	int filter_encode_write_frame(AVFrame *frame, unsigned int stream_index);
+	int flush_encoder(unsigned int stream_index);
+
 };
 
 #endif // PHVIDEOENGINE_H
