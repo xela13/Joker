@@ -219,21 +219,36 @@ void VideoTestWindow::onPaint(int width, int height)
 	_videoEngine.drawVideo(0, 0, width, height);
 }
 
+void VideoTestWindow::updateProgressInformation(PhFrame frame)
+{
+	PhTimeCodeType tcType = _videoEngine.timeCodeType();
+	// Update display every second
+	if(frame % PhTimeCode::getFps(tcType) == 0) {
+		progressValueChanged(frame);
+		progressInformationChanged(PhTimeCode::stringFromFrame(frame, tcType)
+		                           + "/" + PhTimeCode::stringFromFrame(_videoEngine.frameOut(), tcType));
+	}
+}
+
 void VideoTestWindow::on_actionExport_to_MJPEG_triggered()
 {
 	QString outputFile = _settings->currentDocument().split(".").first() + "_MJPEG.mov";
 	outputFile = QFileDialog::getSaveFileName(this, tr("Export..."), outputFile, "*.mov");
 	if(!outputFile.isEmpty()) {
-		QProgressDialog progressDialog(tr("Export progress :"), tr("Cancel"), 0, _videoEngine.length(), this);
-		connect(&PhVideoEngine::frameExported, )
+		QProgressDialog progressDialog(tr("Export progress :"), tr("Cancel"), _videoEngine.frameIn(), _videoEngine.frameOut(), this);
+		connect(&_videoEngine, &PhVideoEngine::frameExported, this, &VideoTestWindow::updateProgressInformation);
+		connect(this, &VideoTestWindow::progressValueChanged, &progressDialog, &QProgressDialog::setValue);
+		connect(this, &VideoTestWindow::progressInformationChanged, &progressDialog, &QProgressDialog::setLabelText);
+		connect(&progressDialog, &QProgressDialog::canceled, &_videoEngine, &PhVideoEngine::cancelExport);
+		progressDialog.show();
 
-		if(_videoEngine.exportToMjpeg(outputFile))
-		{
-			int ret = QMessageBox::question(this, tr("Export succeed"), tr("Do you want to open the exported file?), QMessageBox::Yes | QMessageBox::No);
+		if(_videoEngine.exportToMjpeg(outputFile)) {
+			int ret = QMessageBox::question(this, tr("Export succeed"), tr("Do you want to open the exported file?"), QMessageBox::Yes | QMessageBox::No);
 			if(ret == QMessageBox::Yes) {
 				openDocument(outputFile);
 			}
 		}
+		progressDialog.hide();
 	}
 }
 

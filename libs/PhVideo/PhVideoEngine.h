@@ -223,7 +223,13 @@ public:
 	 * @brief Start the encoder
 	 * @return True if export succeed, false otherwise
 	 */
-	bool exportToMjpeg();
+	bool exportToMjpeg(QString outputFile);
+
+public slots:
+	/**
+	 * @brief Cancel the current export process
+	 */
+	void cancelExport();
 
 signals:
 	/**
@@ -271,10 +277,10 @@ private:
 	uint8_t * _rgb;
 
 	// Encoder stuff
-	AVFormatContext *_ifmt_ctx;
-	AVFormatContext *ofmt_ctx;
-	FilteringContext *filter_ctx;
-	int _currentEncodedFrame;
+	AVFormatContext *_formatContext;
+	AVFormatContext *_outputFormatContext;
+	FilteringContext *_filterContext;
+	bool _exportCanceled;
 
 	int open_output_file(const char *filename);
 	int init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char *filter_spec);

@@ -54,6 +54,10 @@ protected:
 	void onApplicationActivate();
 	void onApplicationDeactivate();
 
+signals:
+	void progressValueChanged(int value);
+	void progressInformationChanged(QString info);
+
 private slots:
 	void on_actionPlay_pause_triggered();
 
@@ -76,6 +80,8 @@ private slots:
 	void onTimeChanged(PhTime time);
 
 	void onPaint(int width, int height);
+
+	void updateProgressInformation(PhFrame frame);
 
 	void on_actionExport_to_MJPEG_triggered();
 
