@@ -248,7 +248,6 @@ private:
 	PhClock _clock;
 	PhFrame _frameIn;
 
-	AVFormatContext * _pFormatContext;
 	AVStream *_videoStream;
 	AVFrame * _videoFrame;
 	PhGraphicTexturedRect _videoRect;
@@ -265,12 +264,11 @@ private:
 	uint8_t * _rgb;
 
 	// Encoder stuff
-	AVFormatContext *ifmt_ctx;
+	AVFormatContext *_ifmt_ctx;
 	AVFormatContext *ofmt_ctx;
 	FilteringContext *filter_ctx;
 	int _currentEncodedFrame;
 
-	int open_input_file(const char *filename);
 	int open_output_file(const char *filename);
 	int init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char *filter_spec);
 	int init_filters(void);
