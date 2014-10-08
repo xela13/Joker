@@ -76,6 +76,13 @@ public:
 	static PhTime timePerFrame(PhTimeCodeType type);
 
 	/**
+	 * @brief Get the time per second according to a type of TC
+	 * @param type A timecode type
+	 * @return A time value
+	 */
+	static PhTime timePerSecond(PhTimeCodeType type);
+
+	/**
 	 * @brief Compute the time value from a timecode string representation and a type.
 	 * @param string A string
 	 * @param type A timecode type
@@ -128,27 +135,6 @@ public:
 	static void ComputeHhMmSsFfFromTime(unsigned int *hhmmssff, PhTime time, PhTimeCodeType type);
 
 	/**
-	 * @brief Compute frame number from the HH, MM, SS and FF timecode component and a type.
-	 *
-	 * @param hh The hour value.
-	 * @param mm The minute value.
-	 * @param ss The second value.
-	 * @param ff The frame value.
-	 * @param type A timecode type.
-	 * @return The corresponding frame number.
-	 */
-	static PhFrame frameFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned int ss, unsigned int ff, PhTimeCodeType type);
-
-	/**
-	 * @brief Compute frame number from the HH, MM, SS and FF timecode component and a type.
-	 *
-	 * @param hhmmssff Array containing the HH, MM, SS, FF values.
-	 * @param type A timecode type.
-	 * @return The corresponding frame number.
-	 */
-	static PhFrame frameFromHhMmSsFf(unsigned int * hhmmssff, PhTimeCodeType type);
-
-	/**
 	 * @brief Compute time from the HH, MM, SS and FF timecode component and a type.
 	 *
 	 * @param hh The hour value.
@@ -168,6 +154,27 @@ public:
 	 * @return The corresponding time number.
 	 */
 	static PhFrame timeFromHhMmSsFf(unsigned int * hhmmssff, PhTimeCodeType type);
+
+	/**
+	 * @brief Compute frame number from the HH, MM, SS and FF timecode component and a type.
+	 *
+	 * @param hh The hour value.
+	 * @param mm The minute value.
+	 * @param ss The second value.
+	 * @param ff The frame value.
+	 * @param type A timecode type.
+	 * @return The corresponding frame number.
+	 */
+	static PhFrame frameFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned int ss, unsigned int ff, PhTimeCodeType type);
+
+	/**
+	 * @brief Compute frame number from the HH, MM, SS and FF timecode component and a type.
+	 *
+	 * @param hhmmssff Array containing the HH, MM, SS, FF values.
+	 * @param type A timecode type.
+	 * @return The corresponding frame number.
+	 */
+	static PhFrame frameFromHhMmSsFf(unsigned int * hhmmssff, PhTimeCodeType type);
 
 	/**
 	 * @brief Check if the timecode type is dropframe.

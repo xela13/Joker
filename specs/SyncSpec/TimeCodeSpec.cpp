@@ -82,28 +82,28 @@ go_bandit([](){
 				AssertThat(PhTimeCode::stringFromTime(15855840, type), Equals("00:11:00:00"));
 			});
 
-			it("get_frame_from_string", [&](){
+			it("get_time_from_string_2398fps", [&](){
 				// Check various value of string
-				AssertThat(PhTimeCode::frameFromString("00:00:00:00", type), Equals(0));
-				AssertThat(PhTimeCode::frameFromString("00:00:00:01", type), Equals(1));
-				AssertThat(PhTimeCode::frameFromString("00:00:00:23", type), Equals(23));
-				AssertThat(PhTimeCode::frameFromString("00:00:01:00", type), Equals(24));
-				AssertThat(PhTimeCode::frameFromString("00:00:01:23", type), Equals(47));
-				AssertThat(PhTimeCode::frameFromString("00:00:02:00", type), Equals(48));
-				AssertThat(PhTimeCode::frameFromString("00:00:59:23", type), Equals(1439));
-				AssertThat(PhTimeCode::frameFromString("00:01:00:00", type), Equals(1440));
-				AssertThat(PhTimeCode::frameFromString("00:01:59:23", type), Equals(2879));
-				AssertThat(PhTimeCode::frameFromString("00:02:00:00", type), Equals(2880));
-				AssertThat(PhTimeCode::frameFromString("00:02:59:23", type), Equals(4319));
-				AssertThat(PhTimeCode::frameFromString("00:03:00:00", type), Equals(4320));
-				AssertThat(PhTimeCode::frameFromString("00:09:59:23", type), Equals(14399));
-				AssertThat(PhTimeCode::frameFromString("00:10:00:00", type), Equals(14400));
-				AssertThat(PhTimeCode::frameFromString("00:10:00:01", type), Equals(14401));
-				AssertThat(PhTimeCode::frameFromString("00:10:59:23", type), Equals(15839));
-				AssertThat(PhTimeCode::frameFromString("00:11:00:00", type), Equals(15840));
+				AssertThat(PhTimeCode::timeFromString("00:00:00:00", type), Equals(0));
+				AssertThat(PhTimeCode::timeFromString("00:00:00:01", type), Equals(1001));
+				AssertThat(PhTimeCode::timeFromString("00:00:00:23", type), Equals(23023));
+				AssertThat(PhTimeCode::timeFromString("00:00:01:00", type), Equals(24024));
+				AssertThat(PhTimeCode::timeFromString("00:00:01:23", type), Equals(47047));
+				AssertThat(PhTimeCode::timeFromString("00:00:02:00", type), Equals(48048));
+				AssertThat(PhTimeCode::timeFromString("00:00:59:23", type), Equals(1440439));
+				AssertThat(PhTimeCode::timeFromString("00:01:00:00", type), Equals(1441440));
+				AssertThat(PhTimeCode::timeFromString("00:01:59:23", type), Equals(2881879));
+				AssertThat(PhTimeCode::timeFromString("00:02:00:00", type), Equals(2882880));
+				AssertThat(PhTimeCode::timeFromString("00:02:59:23", type), Equals(4323319));
+				AssertThat(PhTimeCode::timeFromString("00:03:00:00", type), Equals(4324320));
+				AssertThat(PhTimeCode::timeFromString("00:09:59:23", type), Equals(14413399));
+				AssertThat(PhTimeCode::timeFromString("00:10:00:00", type), Equals(14414400));
+				AssertThat(PhTimeCode::timeFromString("00:10:00:01", type), Equals(14415401));
+				AssertThat(PhTimeCode::timeFromString("00:10:59:23", type), Equals(15854839));
+				AssertThat(PhTimeCode::timeFromString("00:11:00:00", type), Equals(15855840));
 			});
 
-			it("get_bcd_from_frame", [&](){
+			it("get_bcd_from_frame_2398fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::bcdFromFrame(0, type), Equals(0x00000000u));
 				AssertThat(PhTimeCode::bcdFromFrame(1, type), Equals(0x00000001u));
@@ -124,7 +124,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::bcdFromFrame(15840, type), Equals(0x00110000u));
 			});
 
-			it("get_frame_from_bcd", [&](){
+			it("get_frame_from_bcd_2398fps", [&](){
 				// Check various value of binary coded decimal (bcd)
 				AssertThat(PhTimeCode::frameFromBcd(0x00000000, type), Equals(0));
 				AssertThat(PhTimeCode::frameFromBcd(0x00000001, type), Equals(1));
@@ -149,7 +149,7 @@ go_bandit([](){
 
 		describe("24fps", [](){
 			PhTimeCodeType type = PhTimeCodeType24;
-			it("get_string_from_frame", [&](){
+			it("get_string_from_frame_24fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::stringFromFrame(0, type), Equals("00:00:00:00"));
 				AssertThat(PhTimeCode::stringFromFrame(1, type), Equals("00:00:00:01"));
@@ -170,7 +170,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::stringFromFrame(15840, type), Equals("00:11:00:00"));
 			});
 
-			it("get_frame_from_string", [&](){
+			it("get_frame_from_string_24fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::frameFromString("00:00:00:00", type), Equals(0));
 				AssertThat(PhTimeCode::frameFromString("00:00:00:01", type), Equals(1));
@@ -190,7 +190,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::frameFromString("00:10:59:23", type), Equals(15839));
 			});
 
-			it("get_bcd_from_frame", [&](){
+			it("get_bcd_from_frame_24fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::bcdFromFrame(0, type), Equals(0x00000000u));
 				AssertThat(PhTimeCode::bcdFromFrame(1, type), Equals(0x00000001u));
@@ -211,7 +211,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::bcdFromFrame(15840, type), Equals(0x00110000u));
 			});
 
-			it("get_frame_from_bcd", [&](){
+			it("get_frame_from_bcd_24fps", [&](){
 				// Check various value of binary coded decimal (bcd)
 				AssertThat(PhTimeCode::frameFromBcd(0x00000000, type), Equals(0));
 				AssertThat(PhTimeCode::frameFromBcd(0x00000001, type), Equals(1));
@@ -236,7 +236,7 @@ go_bandit([](){
 		describe("25fps", [](){
 			PhTimeCodeType type = PhTimeCodeType25;
 
-			it("get_string_from_time", [&](){
+			it("get_string_from_time_25fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::stringFromTime(0, type), Equals("00:00:00:00"));
 				AssertThat(PhTimeCode::stringFromTime(960, type), Equals("00:00:00:01"));
@@ -257,7 +257,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::stringFromTime(15840000, type), Equals("00:11:00:00"));
 			});
 
-			it("get_string_from_frame", [&](){
+			it("get_string_from_frame_25fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::stringFromFrame(0, type), Equals("00:00:00:00"));
 				AssertThat(PhTimeCode::stringFromFrame(1, type), Equals("00:00:00:01"));
@@ -278,7 +278,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::stringFromFrame(16500, type), Equals("00:11:00:00"));
 			});
 
-			it("get_time_from_string", [&](){
+			it("get_time_from_string_25fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::timeFromString("00:00:00:00", type), Equals(0));
 				AssertThat(PhTimeCode::timeFromString("00:00:00:01", type), Equals(960));
@@ -299,7 +299,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::timeFromString("00:11:00:00", type), Equals(15840000));
 			});
 
-			it("get_frame_from_string", [&](){
+			it("get_frame_from_string_25fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::frameFromString("00:00:00:00", type), Equals(0));
 				AssertThat(PhTimeCode::frameFromString("00:00:00:01", type), Equals(1));
@@ -320,7 +320,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::frameFromString("00:11:00:00", type), Equals(16500));
 			});
 
-			it("get_bcd_from_time", [&](){
+			it("get_bcd_from_time_25fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::bcdFromTime(0, type), Equals(0x00000000u));
 				AssertThat(PhTimeCode::bcdFromTime(960, type), Equals(0x00000001u));
@@ -341,7 +341,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::bcdFromTime(15840000, type), Equals(0x00110000u));
 			});
 
-			it("get_bcd_from_frame", [&](){
+			it("get_bcd_from_frame_25fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::bcdFromFrame(0, type), Equals(0x00000000u));
 				AssertThat(PhTimeCode::bcdFromFrame(1, type), Equals(0x00000001u));
@@ -362,7 +362,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::bcdFromFrame(16500, type), Equals(0x00110000u));
 			});
 
-			it("get_time_from_bcd", [&](){
+			it("get_time_from_bcd_25fps", [&](){
 				// Check various value of binary coded decimal (bcd)
 				AssertThat(PhTimeCode::timeFromBcd(0x00000000, type), Equals(0));
 				AssertThat(PhTimeCode::timeFromBcd(0x00000001, type), Equals(960));
@@ -383,7 +383,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::timeFromBcd(0x00110000, type), Equals(15840000));
 			});
 
-			it("get_frame_from_bcd", [&](){
+			it("get_frame_from_bcd_25fps", [&](){
 				// Check various value of binary coded decimal (bcd)
 				AssertThat(PhTimeCode::frameFromBcd(0x00000000, type), Equals(0));
 				AssertThat(PhTimeCode::frameFromBcd(0x00000001, type), Equals(1));
@@ -404,7 +404,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::frameFromBcd(0x00110000, type), Equals(16500));
 			});
 
-			it("get_time_from_hhmmssf_1", [&](){
+			it("get_time_from_hhmmssf_1_25fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::timeFromHhMmSsFf(0, 0, 0, 0,  type), Equals(0));
 				AssertThat(PhTimeCode::timeFromHhMmSsFf(0, 0, 0, 1, type), Equals(960));
@@ -425,7 +425,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::timeFromHhMmSsFf(0, 11, 0, 0,  type), Equals(15840000));
 			});
 
-			it("get_time_from_hhmmssf_2", [&](){
+			it("get_time_from_hhmmssf_2_25fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::timeFromHhMmSsFf(new unsigned int[4]{0, 0,  0,  0},  type), Equals(0));
 				AssertThat(PhTimeCode::timeFromHhMmSsFf(new unsigned int[4]{0, 0,  0,  1},  type), Equals(960));
@@ -446,7 +446,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::timeFromHhMmSsFf(new unsigned int[4]{0, 11, 0,  0},  type), Equals(15840000));
 			});
 
-			it("get_frame_from_hhmmssf", [&](){
+			it("get_frame_from_hhmmssf_25fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::frameFromHhMmSsFf(0, 0, 0, 0,  type), Equals(0));
 				AssertThat(PhTimeCode::frameFromHhMmSsFf(0, 0, 0, 01, type), Equals(1));
@@ -467,7 +467,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::frameFromHhMmSsFf(0, 11, 0, 0,  type), Equals(16500));
 			});
 
-			it("get_string_from_frame_with_extreme_value", [&](){
+			it("get_string_from_frame_with_extreme_value_25fps", [&](){
 				// Test frame values around 24h
 				AssertThat(PhTimeCode::stringFromFrame(2159999, type), Equals("23:59:59:24"));
 				AssertThat(PhTimeCode::stringFromFrame(2160000, type), Equals("24:00:00:00"));
@@ -482,7 +482,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::stringFromFrame(-2176499, type), Equals("-24:10:59:24"));
 			});
 
-			it("get_frame_from_string_special", [&](){
+			it("get_frame_from_string_special_25fps", [&](){
 				// Test bad value for hh, mm, ss and ff
 				AssertThat(f2s(PhTimeCode::frameFromString("12:23:34:30", type), type), Equals("12:23:34:00"));
 				AssertThat(f2s(PhTimeCode::frameFromString("12:23:34:ff", type), type), Equals("12:23:34:00"));
@@ -509,7 +509,7 @@ go_bandit([](){
 
 		describe("2997fps", [](){
 			PhTimeCodeType type = PhTimeCodeType2997;
-			it("get_string_from_frame", [&](){
+			it("get_string_from_frame_2997fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::stringFromFrame(0, type), Equals("00:00:00:00"));
 				AssertThat(PhTimeCode::stringFromFrame(1, type), Equals("00:00:00:01"));
@@ -533,7 +533,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::stringFromFrame(19782, type), Equals("00:11:00:02"));
 			});
 
-			it("get_frame_from_string", [&](){
+			it("get_frame_from_string_2997fps", [&](){
 				// Check various value of string
 				AssertThat(PhTimeCode::frameFromString("00:00:00:00", type), Equals(0));
 				AssertThat(PhTimeCode::frameFromString("00:00:00:01", type), Equals(1));
@@ -556,7 +556,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::frameFromString("00:11:00:02", type), Equals(19782));
 			});
 
-			it("get_bcd_from_frame", [&](){
+			it("get_bcd_from_frame_2997fps", [&](){
 				// Check various value of frame
 				AssertThat(PhTimeCode::bcdFromFrame(0, type), Equals(0x000000u));
 				AssertThat(PhTimeCode::bcdFromFrame(1, type), Equals(0x00000001u));
@@ -580,7 +580,7 @@ go_bandit([](){
 				AssertThat(PhTimeCode::bcdFromFrame(19782, type), Equals(0x00110002u));
 			});
 
-			it("get_frame_from_bcd", [&](){
+			it("get_frame_from_bcd_2997fps", [&](){
 				// Check various value of binary coded decimal (bcd)
 				AssertThat(PhTimeCode::frameFromBcd(0x00000000, type), Equals(0));
 				AssertThat(PhTimeCode::frameFromBcd(0x00000001, type), Equals(1));

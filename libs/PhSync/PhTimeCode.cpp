@@ -18,7 +18,8 @@ QString PhTimeCode::stringFromFrame(PhFrame frame, PhTimeCodeType type) {
 	                                    QString::number(hhmmssff[3]).rightJustified(2, '0'));
 }
 
-PhFrame PhTimeCode::frameFromString(QString string, PhTimeCodeType type) {
+PhTime PhTimeCode::timeFromString(QString string, PhTimeCodeType type)
+{
 	long sign = 1;
 	if ((string.length() > 0) && string.at(0) == '-') {
 		sign = -1;
@@ -34,7 +35,7 @@ PhFrame PhTimeCode::frameFromString(QString string, PhTimeCodeType type) {
 			k += 4 - list.count();
 		hhmmssff[k] = list.at(i).toInt();
 	}
-	return sign * frameFromHhMmSsFf(hhmmssff, type);
+	return sign * timeFromHhMmSsFf(hhmmssff, type);
 }
 
 unsigned int PhTimeCode::bcdFromFrame(PhFrame frame, PhTimeCodeType type) {
@@ -52,6 +53,11 @@ unsigned int PhTimeCode::bcdFromFrame(PhFrame frame, PhTimeCodeType type) {
 	result += (hhmmssff[0] / 10) << 28;
 
 	return result;
+}
+
+PhFrame PhTimeCode::frameFromString(QString string, PhTimeCodeType type)
+{
+	return timeFromString(string, type) / timePerFrame(type);
 }
 
 unsigned int PhTimeCode::bcdFromTime(PhTime time, PhTimeCodeType type)
@@ -153,9 +159,18 @@ PhTime PhTimeCode::timePerFrame(PhTimeCodeType type)
 	return 0;
 }
 
-PhTime PhTimeCode::timeFromString(QString string, PhTimeCodeType type)
+PhTime PhTimeCode::timePerSecond(PhTimeCodeType type)
 {
-	return frameFromString(string, type) * timePerFrame(type);
+	switch (type) {
+	case PhTimeCodeType2398:
+		return 24024;
+	case PhTimeCodeType2997:
+		return 24030;
+	case PhTimeCodeType24:
+	case PhTimeCodeType25:
+	case PhTimeCodeType30:
+		return 24000;
+	}
 }
 
 QString PhTimeCode::stringFromTime(PhTime time, PhTimeCodeType type)
@@ -221,23 +236,17 @@ void PhTimeCode::ComputeHhMmSsFfFromTime(unsigned int *hhmmssff, PhTime time, Ph
 	ComputeHhMmSsFf(hhmmssff, time / timePerFrame(type), type);
 }
 
-PhFrame PhTimeCode::frameFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned int ss, unsigned int ff, PhTimeCodeType type)
+PhFrame PhTimeCode::timeFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned int ss, unsigned int ff, PhTimeCodeType type)
 {
-	PhFrame fps = getFps(type);
-
-	if (mm >= 60) {
-		PHDEBUG << "Bad minute value:" << QString::number(mm);
-		mm = 0;
-	}
-	if (ss >= 60) {
-		PHDEBUG << "Bad second value:" << QString::number(ss);
-		ss = 0;
-	}
-	if ((long) ff >= fps) {
-		PHDEBUG << "Bad frame value:" << QString::number(ff);
-		ff = 0;
-	}
 	PhFrame dropframe = 0;
+
+	if(mm >= 60)
+		mm = 0;
+	if(ss >= 60)
+		ss = 0;
+	if(ff > getFps(type))
+		ff = 0;
+
 	if (isDrop(type)) {
 		// counting drop per hour
 		dropframe += hh * 108;
@@ -246,19 +255,20 @@ PhFrame PhTimeCode::frameFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned
 		// counting drop per minute
 		dropframe += (mm % 10) * 2;
 	}
-	return (((hh * 60) + mm) * 60 + ss) * fps + ff - dropframe;
+
+	return (((hh * 60) + mm) * 60 + ss) * timePerSecond(type) + (ff - dropframe) * timePerFrame(type);
 }
 
-PhFrame PhTimeCode::frameFromHhMmSsFf(unsigned int *hhmmssff, PhTimeCodeType type) {
-	return frameFromHhMmSsFf(hhmmssff[0], hhmmssff[1], hhmmssff[2], hhmmssff[3], type);
+PhFrame PhTimeCode::timeFromHhMmSsFf(unsigned int *hhmmssff, PhTimeCodeType type) {
+	return timeFromHhMmSsFf(hhmmssff[0], hhmmssff[1], hhmmssff[2], hhmmssff[3], type);
 }
 
-PhFrame PhTimeCode::timeFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned int ss, unsigned int ff, PhTimeCodeType type)
+PhFrame PhTimeCode::frameFromHhMmSsFf(unsigned int hh, unsigned int mm, unsigned int ss, unsigned int ff, PhTimeCodeType type)
 {
-	return frameFromHhMmSsFf(hh, mm, ss, ff, type) * timePerFrame(type);
+	return timeFromHhMmSsFf(hh, mm, ss, ff, type) / timePerFrame(type);
 }
 
-PhFrame PhTimeCode::timeFromHhMmSsFf(unsigned int *hhmmssff, PhTimeCodeType type)
+PhFrame PhTimeCode::frameFromHhMmSsFf(unsigned int *hhmmssff, PhTimeCodeType type)
 {
-	return frameFromHhMmSsFf(hhmmssff, type) * timePerFrame(type);
+	return timeFromHhMmSsFf(hhmmssff, type) / timePerFrame(type);
 }
