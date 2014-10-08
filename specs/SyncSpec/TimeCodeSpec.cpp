@@ -60,25 +60,26 @@ go_bandit([](){
 
 		describe("2398fps", [](){
 			PhTimeCodeType type = PhTimeCodeType2398;
-			it("get_string_from_frame", [&](){
+			it("get_string_from_time_2398fps", [&](){
 				// Check various value of frame
-				AssertThat(PhTimeCode::stringFromFrame(0, type), Equals("00:00:00:00"));
-				AssertThat(PhTimeCode::stringFromFrame(1, type), Equals("00:00:00:01"));
-				AssertThat(PhTimeCode::stringFromFrame(23, type), Equals("00:00:00:23"));
-				AssertThat(PhTimeCode::stringFromFrame(24, type), Equals("00:00:01:00"));
-				AssertThat(PhTimeCode::stringFromFrame(47, type), Equals("00:00:01:23"));
-				AssertThat(PhTimeCode::stringFromFrame(48, type), Equals("00:00:02:00"));
-				AssertThat(PhTimeCode::stringFromFrame(1439, type), Equals("00:00:59:23"));
-				AssertThat(PhTimeCode::stringFromFrame(1440, type), Equals("00:01:00:00"));
-				AssertThat(PhTimeCode::stringFromFrame(2879, type), Equals("00:01:59:23"));
-				AssertThat(PhTimeCode::stringFromFrame(2880, type), Equals("00:02:00:00"));
-				AssertThat(PhTimeCode::stringFromFrame(4319, type), Equals("00:02:59:23"));
-				AssertThat(PhTimeCode::stringFromFrame(4320, type), Equals("00:03:00:00"));
-				AssertThat(PhTimeCode::stringFromFrame(14399, type), Equals("00:09:59:23"));
-				AssertThat(PhTimeCode::stringFromFrame(14400, type), Equals("00:10:00:00"));
-				AssertThat(PhTimeCode::stringFromFrame(14401, type), Equals("00:10:00:01"));
-				AssertThat(PhTimeCode::stringFromFrame(15839, type), Equals("00:10:59:23"));
-				AssertThat(PhTimeCode::stringFromFrame(15840, type), Equals("00:11:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(0, type), Equals("00:00:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(1000, type), Equals("00:00:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(1001, type), Equals("00:00:00:01"));
+				AssertThat(PhTimeCode::stringFromTime(24023, type), Equals("00:00:00:23"));
+				AssertThat(PhTimeCode::stringFromTime(24024, type), Equals("00:00:01:00"));
+				AssertThat(PhTimeCode::stringFromTime(48047, type), Equals("00:00:01:23"));
+				AssertThat(PhTimeCode::stringFromTime(48048, type), Equals("00:00:02:00"));
+				AssertThat(PhTimeCode::stringFromTime(1441439, type), Equals("00:00:59:23"));
+				AssertThat(PhTimeCode::stringFromTime(1441440, type), Equals("00:01:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(2882879, type), Equals("00:01:59:23"));
+				AssertThat(PhTimeCode::stringFromTime(2882880, type), Equals("00:02:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(4324319, type), Equals("00:02:59:23"));
+				AssertThat(PhTimeCode::stringFromTime(4324320, type), Equals("00:03:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(14414399, type), Equals("00:09:59:23"));
+				AssertThat(PhTimeCode::stringFromTime(14414400, type), Equals("00:10:00:00"));
+				AssertThat(PhTimeCode::stringFromTime(14415401, type), Equals("00:10:00:01"));
+				AssertThat(PhTimeCode::stringFromTime(15855839, type), Equals("00:10:59:23"));
+				AssertThat(PhTimeCode::stringFromTime(15855840, type), Equals("00:11:00:00"));
 			});
 
 			it("get_frame_from_string", [&](){
