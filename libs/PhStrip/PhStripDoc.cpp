@@ -12,6 +12,8 @@
 
 #include "PhStripDoc.h"
 
+namespace pt = boost::property_tree;
+
 PhStripDoc::PhStripDoc()
 {
 	reset();
@@ -216,16 +218,15 @@ bool PhStripDoc::exportDetXFile(QString fileName, PhTime lastTime)
 {
 	PHDEBUG << fileName;
 
-	using boost::property_tree::ptree;
-	ptree pt;
+	pt::ptree detx;
 
-	pt.put("detx.header.title", _title.toStdString());
-	pt.put("detx.header.videofile", _videoPath.toStdString());
-	pt.put("detx.header.videofile.<xmlattr>.timestamp", PhTimeCode::stringFromTime(_videoTimeIn, _videoTimeCodeType).toStdString());
-	pt.put("detx.header.videofile.<xmlattr>.tctype", PhTimeCode::getAverageFps(_videoTimeCodeType));
-	pt.put("detx.header.last_position.<xmlattr>.timecode", PhTimeCode::stringFromTime(lastTime, _videoTimeCodeType).toStdString());
+	detx.put("detx.header.title", _title.toStdString());
+	detx.put("detx.header.videofile", _videoPath.toStdString());
+	detx.put("detx.header.videofile.<xmlattr>.timestamp", PhTimeCode::stringFromTime(_videoTimeIn, _videoTimeCodeType).toStdString());
+	detx.put("detx.header.videofile.<xmlattr>.tctype", PhTimeCode::getAverageFps(_videoTimeCodeType));
+	detx.put("detx.header.last_position.<xmlattr>.timecode", PhTimeCode::stringFromTime(lastTime, _videoTimeCodeType).toStdString());
 
-	ptree roles;
+	pt::ptree roles;
 	QMap<const PhPeople*, QString> idMap;
 
 	foreach(const PhPeople *people, _peoples) {
@@ -242,7 +243,7 @@ bool PhStripDoc::exportDetXFile(QString fileName, PhTime lastTime)
 			}
 		}
 
-		ptree role;
+		pt::ptree role;
 		role.put("<xmlattr>.name", people->name().toStdString());
 		role.put("<xmlattr>.id", id.toStdString());
 		role.put("<xmlattr>.color", people->color().toStdString());
@@ -250,34 +251,34 @@ bool PhStripDoc::exportDetXFile(QString fileName, PhTime lastTime)
 
 		roles.push_back(std::make_pair("role", role));
 	}
-	pt.add_child("detx.roles", roles);
+	detx.add_child("detx.roles", roles);
 
-	ptree lines;
+	pt::ptree lines;
 
 	foreach(const PhStripText *text, texts()) {
-		ptree line;
+		pt::ptree line;
 		line.put("<xmlattr>.role", idMap[text->people()].toStdString());
 		line.put("<xmlattr>.track", boost::format("%d") % (int)(text->y() * 4));
 
-		ptree lipsync1;
+		pt::ptree lipsync1;
 		lipsync1.put("<xmlattr>.timecode", PhTimeCode::stringFromTime(text->timeIn(), _videoTimeCodeType).toStdString());
 		lipsync1.put("<xmlattr>.type", "in_open");
 		line.push_back(std::make_pair("lipsync", lipsync1));
 
 		line.put("text", text->content().toStdString());
 
-		ptree lipsync2;
+		pt::ptree lipsync2;
 		lipsync2.put("<xmlattr>.timecode", PhTimeCode::stringFromTime(text->timeOut(), _videoTimeCodeType).toStdString());
 		lipsync2.put("<xmlattr>.type", "out_open");
 		line.push_back(std::make_pair("lipsync", lipsync2));
 
 		lines.push_back(std::make_pair("line", line));
 	}
-	pt.add_child("detx.body", lines);
+	detx.add_child("detx.body", lines);
 
 	std::ofstream file(fileName.toStdString());
 
-	write_xml(file, pt, boost::property_tree::xml_writer_make_settings<std::string>('\t', 1));
+	write_xml(file, detx, pt::xml_writer_make_settings<std::string>('\t', 1));
 
 	file.close();
 
@@ -1122,6 +1123,110 @@ bool PhStripDoc::importSyn6File(const QString &fileName)
 	return true;
 }
 
+bool PhStripDoc::importDubXFile(const QString &fileName)
+{
+ // Create an empty property tree object
+    pt::ptree dubx;
+
+    // Load the XML file into the property tree. If reading fails
+    // (cannot open file, parse error), an exception is thrown.
+    read_xml(fileName.toStdString(), dubx);
+
+	_filePath = fileName;
+
+	reset();
+
+#warning /// @todo use real name
+	_generator = "dubx";
+
+	// Reading timecode type
+	PhTimeCodeType tcType = PhTimeCodeType25;
+#warning /// @todo handle other timecode type
+
+	// Reading the info
+	{
+		// Reading the title
+		_title = QString::fromStdString(dubx.get<std::string>("dubx.info.title.original"));
+		if(_title.isEmpty())
+			_title = QFileInfo(fileName).baseName();
+
+		_episode = QString::fromStdString(dubx.get<std::string>("dubx.info.title.<xmlattr>.episode"));
+
+		// Reading the video path
+		_videoPath = QString::fromStdString(dubx.get<std::string>("dubx.media.file"));
+
+//		if(info.elementsByTagName("videofile").count()) {
+//			QDomElement videoFile = info.elementsByTagName("videofile").at(0).toElement();
+//			_videoPath = videoFile.text();
+//			// Reading the video time in
+//			_videoTimeIn = PhTimeCode::timeFromString(videoFile.attribute("timestamp"), tcType);
+//			_videoTimeCodeType = tcType;
+//		}
+
+//		// Reading the last position
+//		if(info.elementsByTagName("last_position").count()) {
+//			QDomElement lastPosition = info.elementsByTagName("last_position").at(0).toElement();
+//			_lastTime = PhTimeCode::timeFromString(lastPosition.attribute("timecode"), tcType);
+//		}
+
+//		// Reading the author name
+//		if(info.elementsByTagName("author").count()) {
+//			QDomElement author = info.elementsByTagName("author").at(0).toElement();
+//			_authorName = author.attribute("firstname") + " " + author.attribute("name");
+//		}
+
+//		// Reading other meta informations
+//		if(info.elementsByTagName("production").count()) {
+//			QDomElement production = info.elementsByTagName("production").at(0).toElement();
+//			_metaInformation["Producteur"] = production.attribute("producer");
+//			_metaInformation["Année de production"] = production.attribute("year");
+//			_metaInformation["Distributeur"] = production.attribute("distributor");
+//			_metaInformation["Réalisateur"] = production.attribute("director");
+//			_metaInformation["Diffuseur"] = production.attribute("diffuser");
+//			_metaInformation["Pays d'origine"] = production.attribute("country");
+//		}
+	}
+
+	// Reading the "role" lists
+	pt::ptree characters = dubx.get_child("dubx.characters");
+	BOOST_FOREACH(const pt::ptree::value_type& v, characters) {
+		QString nodeName = QString::fromStdString(v.first);
+
+		if(nodeName == "character") {
+			QString name = QString::fromStdString(v.second.get<std::string>("<xmlattr>.name"));
+			QString color = QString::fromStdString(v.second.get<std::string>("<xmlattr>.color"));
+			QString picture = QString::fromStdString(v.second.get<std::string>("picture"));
+			_peoples.append(new PhPeople(name, color, picture));
+		}
+	}
+
+	int loopNumber = 1;
+
+	pt::ptree loops = dubx.get_child("dubx.rythmo");
+
+	BOOST_FOREACH(const pt::ptree::value_type &loop, loops) {
+		if(loop.first == "loop") {
+			PhTime loopTimeIn = PhTimeCode::timeFromString(QString::fromStdString(loop.second.get<std::string>("<xmlattr>.tc")), tcType);
+			QString loopLabel = QString::fromStdString(loop.second.get<std::string>("<xmlattr>.number"));
+			_loops.append(new PhStripLoop(loopTimeIn, loopLabel));
+
+			BOOST_FOREACH(const pt::ptree::value_type &elem, loop.second.get_child("")) {
+				if(elem.first == "text") {
+					PhTime textTimeIn = PhTimeCode::timeFromString(QString::fromStdString(elem.second.get<std::string>("<xmlattr>.tc")), tcType);
+					PhTime textLength = PhTimeCode::timeFromString(QString::fromStdString(elem.second.get<std::string>("<xmlattr>.length")), tcType);
+					QString content = QString::fromStdString(elem.second.get<std::string>(""));
+					PhPeople *people = peopleByName(QString::fromStdString(elem.second.get<std::string>("<xmlattr>.character")));
+					_texts1.append(new PhStripText(textTimeIn, people, textLength, 12, content, 1.4f));
+				}
+			}
+		}
+	}
+
+	emit this->changed();
+
+	return true;
+}
+
 bool PhStripDoc::openStripFile(const QString &fileName)
 {
 	PHDEBUG << fileName;
@@ -1140,6 +1245,9 @@ bool PhStripDoc::openStripFile(const QString &fileName)
 	}
 	else if(extension == "syn6") {
 		return importSyn6File(fileName);
+	}
+	else if(extension == "db") {
+		return importDubXFile(fileName);
 	}
 	else if(extension == "strip" or extension == "joker") {
 		QFile xmlFile(fileName);

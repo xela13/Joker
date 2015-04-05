@@ -674,6 +674,45 @@ go_bandit([](){
 
 		});
 
+		describe("dubx", [&]() {
+			it("open", [&]() {
+				AssertThat(doc.importDubXFile("test01.dubx"), IsTrue());
+			});
+
+			it("import basics", [&]() {
+				AssertThat(doc.importDubXFile("test01.dubx"), IsTrue());
+
+				// Meta
+				AssertThat(doc.title().toStdString(), Equals("dubx title"));
+				AssertThat(doc.episode().toStdString(), Equals("dubx episode"));
+				AssertThat(doc.videoFilePath().toStdString(), Equals("d:\\movie.mov"));
+
+				// Peoples
+				AssertThat(doc.peoples().count(), Equals(2));
+
+				PhPeople *bob = doc.peoples().at(0);
+				AssertThat(bob->name().toStdString(), Equals("Bob"));
+				AssertThat(bob->color().toStdString(), Equals("#ff0000"));
+				AssertThat(bob->picture().toStdString(), Equals("b64 data "));
+
+				PhPeople *sue = doc.peoples().at(1);
+				AssertThat(sue->name().toStdString(), Equals("Sue"));
+				AssertThat(sue->color().toStdString(), Equals("#00ff00"));
+				AssertThat(sue->picture().toStdString(), Equals("other b64 data "));
+
+				// Loops
+				AssertThat(doc.loops().count(), Equals(2));
+
+				// Texts
+				AssertThat(doc.texts().count(), Equals(1));
+
+				PhStripText *text = doc.texts().at(0);
+
+				AssertThat(text->people(), Equals(bob));
+				AssertThat(text->content().toStdString(), Equals("Une détective privée adolescente"));
+			});
+		});
+
 		it("get people by name", [&](){
 			AssertThat(doc.importDetXFile("test01.detx"), IsTrue());
 

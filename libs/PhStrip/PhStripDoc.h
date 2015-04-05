@@ -252,6 +252,12 @@ public:
 	 */
 	bool importSyn6File(const QString &fileName);
 	/**
+	 * @brief Import a DubX file
+	 * @param fileName The path to the DubX file
+	 * @return True if the doc opened well, false otherwise
+	 */
+	bool importDubXFile(const QString &fileName);
+	/**
 	 * @brief Open a strip file
 	 * @param fileName The path to the DetX file
 	 * @return True if the strip opened well, false otherwise
