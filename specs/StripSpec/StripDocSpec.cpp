@@ -703,13 +703,25 @@ go_bandit([](){
 				// Loops
 				AssertThat(doc.loops().count(), Equals(2));
 
+				PhStripLoop *loop = doc.loops().at(0);
+				AssertThat(t2s25(loop->timeIn()), Equals("00:00:00:00"));
+				AssertThat(loop->label().toStdString(), Equals("0"));
+
+				loop = doc.loops().at(1);
+				AssertThat(t2s25(loop->timeIn()), Equals("01:00:13:20"));
+				AssertThat(loop->label().toStdString(), Equals("1"));
+
 				// Texts
 				AssertThat(doc.texts().count(), Equals(1));
 
 				PhStripText *text = doc.texts().at(0);
 
 				AssertThat(text->people(), Equals(bob));
+				AssertThat(t2s25(text->timeIn()), Equals("01:00:14:14"));
+				AssertThat(t2s25(text->timeOut()), Equals("01:00:16:05"));
 				AssertThat(text->content().toStdString(), Equals("Une détective privée adolescente"));
+				AssertThat(text->y(), Equals(0.5f));
+				AssertThat(text->height(), Equals(0.25f));
 			});
 		});
 

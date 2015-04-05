@@ -31,10 +31,10 @@
     </loop>
     <loop number="1" tc="01:00:13:20">
       <reac type="Sniff" line="1" character="Sue" tc="01:00:13:20" length="00:00:00:05">sniff</reac>
-      <sign type="MouthOff" line="0" character="Bob" tc="01:00:14:14" />
-      <original line="0" character="Bob" tc="01:00:14:14" length="00:00:00:20">A teenage</original>
-      <text line="0" character="Bob" tc="01:00:14:14" length="00:00:01:16">Une détective privée adolescente</text>
-      <off type="Off" line="0" character="Bob" tc="01:00:14:14" length="00:00:01:20" />
+      <sign type="MouthOff" line="2" character="Bob" tc="01:00:14:14" />
+      <original line="2" character="Bob" tc="01:00:14:14" length="00:00:00:20">A teenage</original>
+      <text line="2" character="Bob" tc="01:00:14:14" length="00:00:01:16">Une détective privée adolescente</text>
+      <off type="Off" line="2" character="Bob" tc="01:00:14:14" length="00:00:01:20" />
    </loop>
   </rythmo>
   <state tc="02:04:24:17" line="0" last_modification="23/09/2014 14:51:21" />

@@ -1216,7 +1216,10 @@ bool PhStripDoc::importDubXFile(const QString &fileName)
 					PhTime textLength = PhTimeCode::timeFromString(QString::fromStdString(elem.second.get<std::string>("<xmlattr>.length")), tcType);
 					QString content = QString::fromStdString(elem.second.get<std::string>(""));
 					PhPeople *people = peopleByName(QString::fromStdString(elem.second.get<std::string>("<xmlattr>.character")));
-					_texts1.append(new PhStripText(textTimeIn, people, textLength, 12, content, 1.4f));
+#warning /// @todo handling more that 4 lines
+					float textY = elem.second.get<float>("<xmlattr>.line") / 4;
+					float textHeight = 0.25f;
+					_texts1.append(new PhStripText(textTimeIn, people, textTimeIn + textLength, textY, content, textHeight));
 				}
 			}
 		}
