@@ -218,15 +218,17 @@ bool PhStripDoc::exportDetXFile(QString fileName, PhTime lastTime)
 {
 	PHDEBUG << fileName;
 
-	pt::ptree detx;
+	using boost::property_tree::ptree;
+	ptree ptDetX;
 
-	detx.put("detx.header.title", _title.toStdString());
-	detx.put("detx.header.videofile", _videoPath.toStdString());
-	detx.put("detx.header.videofile.<xmlattr>.timestamp", PhTimeCode::stringFromTime(_videoTimeIn, _videoTimeCodeType).toStdString());
-	detx.put("detx.header.videofile.<xmlattr>.tctype", PhTimeCode::getAverageFps(_videoTimeCodeType));
-	detx.put("detx.header.last_position.<xmlattr>.timecode", PhTimeCode::stringFromTime(lastTime, _videoTimeCodeType).toStdString());
+	ptDetX.put("detx.header.title", _title.toStdString());
+	ptDetX.put("detx.header.videofile", _videoPath.toStdString());
+	ptDetX.put("detx.header.videofile.<xmlattr>.timestamp", PhTimeCode::stringFromTime(_videoTimeIn, _videoTimeCodeType).toStdString());
+	ptDetX.put("detx.header.videofile.<xmlattr>.tctype", PhTimeCode::getAverageFps(_videoTimeCodeType));
+	ptDetX.put("detx.header.last_position.<xmlattr>.timecode", PhTimeCode::stringFromTime(lastTime, _videoTimeCodeType).toStdString());
 
-	pt::ptree roles;
+	// export <role> list
+	ptree roles;
 	QMap<const PhPeople*, QString> idMap;
 
 	foreach(const PhPeople *people, _peoples) {
@@ -251,34 +253,51 @@ bool PhStripDoc::exportDetXFile(QString fileName, PhTime lastTime)
 
 		roles.push_back(std::make_pair("role", role));
 	}
-	detx.add_child("detx.roles", roles);
+	ptDetX.add_child("detx.roles", roles);
 
-	pt::ptree lines;
+	// export <body>
+	ptree ptBody;
 
+	// export <loop> list
+	foreach (const PhStripLoop *loop, this->loops()) {
+		ptree ptLoop;
+		ptLoop.put("<xmlattr>.timecode", PhTimeCode::stringFromTime(loop->timeIn(), _videoTimeCodeType).toStdString());
+		ptBody.push_back(std::make_pair("loop", ptLoop));
+	}
+
+	// export <cut> list
+	foreach (const PhStripCut *cut, this->cuts()) {
+		ptree ptShot;
+		ptShot.put("<xmlattr>.timecode", PhTimeCode::stringFromTime(cut->timeIn(), _videoTimeCodeType).toStdString());
+		ptBody.push_back(std::make_pair("shot", ptShot));
+	}
+
+	// export <line> list
 	foreach(const PhStripText *text, texts()) {
-		pt::ptree line;
-		line.put("<xmlattr>.role", idMap[text->people()].toStdString());
-		line.put("<xmlattr>.track", boost::format("%d") % (int)(text->y() * 4));
+		ptree ptLine;
+		ptLine.put("<xmlattr>.role", idMap[text->people()].toStdString());
+		ptLine.put("<xmlattr>.track", boost::format("%d") % (int)(text->y() * 4));
 
 		pt::ptree lipsync1;
 		lipsync1.put("<xmlattr>.timecode", PhTimeCode::stringFromTime(text->timeIn(), _videoTimeCodeType).toStdString());
 		lipsync1.put("<xmlattr>.type", "in_open");
-		line.push_back(std::make_pair("lipsync", lipsync1));
+		ptLine.push_back(std::make_pair("lipsync", lipsync1));
 
-		line.put("text", text->content().toStdString());
+		ptLine.put("text", text->content().toStdString());
 
 		pt::ptree lipsync2;
 		lipsync2.put("<xmlattr>.timecode", PhTimeCode::stringFromTime(text->timeOut(), _videoTimeCodeType).toStdString());
 		lipsync2.put("<xmlattr>.type", "out_open");
-		line.push_back(std::make_pair("lipsync", lipsync2));
+		ptLine.push_back(std::make_pair("lipsync", lipsync2));
 
-		lines.push_back(std::make_pair("line", line));
+		ptBody.push_back(std::make_pair("line", ptLine));
 	}
-	detx.add_child("detx.body", lines);
+
+	ptDetX.add_child("detx.body", ptBody);
 
 	std::ofstream file(fileName.toStdString());
 
-	write_xml(file, detx, pt::xml_writer_make_settings<std::string>('\t', 1));
+	write_xml(file, ptDetX, boost::property_tree::xml_writer_make_settings<std::string>('\t', 1));
 
 	file.close();
 
