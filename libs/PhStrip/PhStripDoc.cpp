@@ -1268,7 +1268,7 @@ bool PhStripDoc::openStripFile(const QString &fileName)
 	else if(extension == "syn6") {
 		return importSyn6File(fileName);
 	}
-	else if(extension == "db") {
+	else if(extension == "dubx") {
 		return importDubXFile(fileName);
 	}
 	else if(extension == "strip" or extension == "joker") {

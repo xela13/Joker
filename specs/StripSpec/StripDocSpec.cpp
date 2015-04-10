@@ -694,7 +694,7 @@ go_bandit([](){
 
 		describe("dubx", [&]() {
 			it("open", [&]() {
-				AssertThat(doc.importDubXFile("test01.dubx"), IsTrue());
+				AssertThat(doc.openStripFile("test01.dubx"), IsTrue());
 			});
 
 			it("import basics", [&]() {
