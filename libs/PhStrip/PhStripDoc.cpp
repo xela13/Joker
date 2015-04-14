@@ -1145,11 +1145,11 @@ bool PhStripDoc::importSyn6File(const QString &fileName)
 bool PhStripDoc::importDubXFile(const QString &fileName)
 {
  // Create an empty property tree object
-    pt::ptree dubx;
+    pt::ptree ptDoc;
 
     // Load the XML file into the property tree. If reading fails
     // (cannot open file, parse error), an exception is thrown.
-    read_xml(fileName.toStdString(), dubx);
+    read_xml(fileName.toStdString(), ptDoc);
 
 	_filePath = fileName;
 
@@ -1162,17 +1162,34 @@ bool PhStripDoc::importDubXFile(const QString &fileName)
 	PhTimeCodeType tcType = PhTimeCodeType25;
 #warning /// @todo handle other timecode type
 
-	// Reading the info
-	{
-		// Reading the title
-		_title = QString::fromStdString(dubx.get<std::string>("dubx.info.title.original"));
-		if(_title.isEmpty())
+	if(ptDoc.count("dubx") == 1) {
+		pt::ptree ptDubX = ptDoc.get_child("dubx");
+
+		// Reading the info
+		if(ptDubX.count("info")) {
+			// Reading the title
+			_title = QString::fromStdString(ptDubX.get<std::string>("info.title.original"));
+			if(_title.isEmpty())
+				_title = QFileInfo(fileName).baseName();
+
+			_episode = QString::fromStdString(ptDubX.get<std::string>("info.title.<xmlattr>.episode"));
+		} else {
+			PHDEBUG << "No info";
 			_title = QFileInfo(fileName).baseName();
+		}
 
-		_episode = QString::fromStdString(dubx.get<std::string>("dubx.info.title.<xmlattr>.episode"));
-
-		// Reading the video path
-		_videoPath = QString::fromStdString(dubx.get<std::string>("dubx.media.file"));
+		// Reading the media
+		if(ptDubX.count("media")) {
+			// Reading the video path
+			_videoPath = QString::fromStdString(ptDubX.get<std::string>("media.file"));
+		} else {
+			PHDEBUG << "No media";
+		}
+	}
+	else {
+		PHDEBUG << "No <dubx> element.";
+		return false;
+	}
 
 //		if(info.elementsByTagName("videofile").count()) {
 //			QDomElement videoFile = info.elementsByTagName("videofile").at(0).toElement();
@@ -1204,10 +1221,9 @@ bool PhStripDoc::importDubXFile(const QString &fileName)
 //			_metaInformation["Diffuseur"] = production.attribute("diffuser");
 //			_metaInformation["Pays d'origine"] = production.attribute("country");
 //		}
-	}
 
 	// Reading the "role" lists
-	pt::ptree characters = dubx.get_child("dubx.characters");
+	pt::ptree characters = ptDoc.get_child("dubx.characters");
 	BOOST_FOREACH(const pt::ptree::value_type& v, characters) {
 		QString nodeName = QString::fromStdString(v.first);
 
@@ -1221,7 +1237,7 @@ bool PhStripDoc::importDubXFile(const QString &fileName)
 
 	int loopNumber = 1;
 
-	pt::ptree loops = dubx.get_child("dubx.rythmo");
+	pt::ptree loops = ptDoc.get_child("dubx.rythmo");
 
 	BOOST_FOREACH(const pt::ptree::value_type &loop, loops) {
 		if(loop.first == "loop") {

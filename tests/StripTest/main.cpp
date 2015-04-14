@@ -168,16 +168,6 @@ void displayDoc(PhStripDoc* doc)
 int main(int argc, char *argv[])
 {
 	PhStripDoc doc;
-
-//	PHDEBUG << doc.computeDetXId("abc");
-//	PHDEBUG << doc.computeDetXId("ABC");
-//	PHDEBUG << doc.computeDetXId("It's ok!");
-
-//	PHDEBUG << doc.importDetXFile("/Users/martin/dev/builds/StripSpec-Desktop_Qt_5_3_clang_64bit-Debug/save01.detx");
-//	PHDEBUG << doc.title();
-
-	return 0;
-
 	StripTestSettings settings;
 //	PhDebug::setDisplay(false, false, false, false, false);
 	PhDebug::setLogMask(settings.logMask());
@@ -186,6 +176,7 @@ int main(int argc, char *argv[])
 
 	for(int i = 1; i < argc; i++) {
 		QString fileName = argv[i];
+		PHDEBUG << "Opening" << fileName;
 		if(QFile::exists(fileName)) {
 			if(doc.openStripFile(fileName)) {
 				displayDoc(&doc);

@@ -697,7 +697,7 @@ go_bandit([](){
 				AssertThat(doc.openStripFile("test01.dubx"), IsTrue());
 			});
 
-			it("import basics", [&]() {
+			it("import basic dubx file", [&]() {
 				AssertThat(doc.importDubXFile("test01.dubx"), IsTrue());
 
 				// Meta
@@ -740,6 +740,13 @@ go_bandit([](){
 				AssertThat(text->content().toStdString(), Equals("Une détective privée adolescente"));
 				AssertThat(text->y(), Equals(0.5f));
 				AssertThat(text->height(), Equals(0.25f));
+			});
+
+			it("import other dubx file", [&]() {
+				AssertThat(doc.importDubXFile("test02.dubx"), IsTrue());
+
+				// Meta
+				AssertThat(doc.title().toStdString(), Equals("test02"));
 			});
 		});
 
