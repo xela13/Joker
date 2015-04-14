@@ -1182,6 +1182,8 @@ bool PhStripDoc::importDubXFile(const QString &fileName)
 		if(ptDubX.count("media")) {
 			// Reading the video path
 			_videoPath = QString::fromStdString(ptDubX.get<std::string>("media.file"));
+			_videoTimeIn = PhTimeCode::timeFromString(QString::fromStdString(ptDubX.get<std::string>("media.file.<xmlattr>.tc")), tcType);
+
 		} else {
 			PHDEBUG << "No media";
 		}
