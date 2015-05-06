@@ -741,7 +741,7 @@ void JokerWindow::on_actionSave_as_triggered()
 
 	fileName = QFileDialog::getSaveFileName(this, tr("Save..."), fileName, "*.detx");
 	if(fileName != "") {
-		if(_doc->saveStripFile(fileName, currentTime())) {
+		if(_doc->exportDetXFile(fileName, currentTime())) {
 			_doc->setModified(false);
 			PhEditableDocumentWindow::saveDocument(fileName);
 		}
@@ -794,6 +794,7 @@ void JokerWindow::on_actionNew_triggered()
 {
 	_doc->reset();
 	on_actionClose_video_triggered();
+	this->resetDocument();
 }
 
 void JokerWindow::on_actionClose_video_triggered()

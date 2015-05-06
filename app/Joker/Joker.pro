@@ -8,7 +8,7 @@ cache()
 
 TARGET = Joker
 
-VERSION = 15.4.14
+VERSION = $$system(date +%y.%m.%d)
 
 CONFIG += video
 
