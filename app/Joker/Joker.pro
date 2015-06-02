@@ -8,10 +8,6 @@ cache()
 
 TARGET = Joker
 
-VERSION = 15.3.18
-
-CONFIG += video
-
 TOP_ROOT = $${_PRO_FILE_PWD_}/../..
 
 include($$TOP_ROOT/common/common.pri)
