@@ -1,11 +1,15 @@
-environment:
-  JOKER_RELEASE_PATH: .
-  QTDIR: C:\Qt\5.4\mingw491_32
-  BOOST_PATH: C:\Libraries\boost
-
 branches:
   except:
     - /^skipthisbranch$/
+environment:
+  global:
+    JOKER_RELEASE_PATH: .
+    QTDIR: C:\Qt\5.4\mingw491_32
+    BOOST_PATH: C:\Libraries\boost
+
+  matrix:
+    - JOB: JOKER
+    - JOB: SPECS
 install:
   - git submodule update --init --recursive
   # Installing various utilities
@@ -43,9 +47,11 @@ install:
   - set LTC_PATH=%CD%\libltc-1.1.4\src
 
 build_script:
-  - qmake app/Joker/Joker.pro
+  - if "%JOB%"=="JOKER" qmake app/Joker/Joker.pro
+  - if "%JOB%"=="SPECS" qmake specs/AllSpecs/AllSpecs.pro
   - mingw32-make -j 8
-  - iscc app/Joker/Joker.iss /DPWD=%CD% /O%JOKER_RELEASE_PATH%
+  - if "%JOB%"=="JOKER" iscc app/Joker/Joker.iss /DPWD=%CD% /O%JOKER_RELEASE_PATH%
+  - if "%JOB%"=="SPECS" cd release & AllSpecs.exe
   - dir
 
 artifacts:
