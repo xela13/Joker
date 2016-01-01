@@ -32,8 +32,12 @@ void PhDebug::messageOutput(QtMsgType type, const QMessageLogContext &context, c
 
 		// Display filename
 		if (instance()->_displayFileName) {
-
-			logMessage += QString(context.file).split("/").last() + "\t";
+#if defined(Q_OS_WIN)
+			QString sep = "\\";
+#else
+			QString sep = "/";
+#endif
+			logMessage += QString(context.file).split(sep).last() + "\t";
 		}
 
 		// Display function name
