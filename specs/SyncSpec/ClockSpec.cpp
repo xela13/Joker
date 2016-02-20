@@ -90,11 +90,23 @@ go_bandit([](){
 			AssertThat(clock.rate(), Equals(1));
 		});
 
-		it("doesnt_call_time_changed_if_elapsed_with_no_rate", [&](){
+		it("doesnt_call_time_changed_if_elapse_with_no_rate", [&](){
 			clock.elapse(24000);
 			AssertThat(timeChanged, IsFalse());
 			AssertThat(time, Equals(0));
 			AssertThat(clock.time(), Equals(0));
+		});
+
+		it("call_time_changed_if_elapse_with_rate", [&](){
+			clock.setRate(1);
+			clock.elapse(24000);
+			AssertThat(timeChanged, IsTrue());
+			AssertThat(time, Equals(24000));
+			AssertThat(clock.time(), Equals(24000));
+
+			clock.setRate(-2);
+			clock.elapse(6000);
+			AssertThat(clock.time(), Equals(12000));
 		});
 
 		it("call_time_changed_if_elapsed_with_rate", [&](){
