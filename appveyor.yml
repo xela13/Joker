@@ -55,7 +55,8 @@ build_script:
   - dir
 
 artifacts:
-  - path: Joker_v*.exe
+  - path: 'Joker_v*.exe'
+  - path: '*.result.bmp'
 deploy:
   provider: GitHub
   auth_token:
