@@ -51,7 +51,7 @@ build_script:
   - if "%JOB%"=="SPECS" qmake specs/AllSpecs/AllSpecs.pro
   - mingw32-make -j 8
   - if "%JOB%"=="JOKER" iscc app/Joker/Joker.iss /DPWD=%CD% /O%JOKER_RELEASE_PATH%
-  - if "%JOB%"=="SPECS" cd release & AllSpecs.exe
+  - if "%JOB%"=="SPECS" cd release & dir & AllSpecs.exe --skip=midi
   - dir
 
 artifacts:

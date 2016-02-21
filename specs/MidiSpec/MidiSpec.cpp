@@ -16,7 +16,7 @@
 using namespace bandit;
 
 go_bandit([](){
-	describe("midi_test", [](){
+	describe("midi", [](){
 		it("connect_to_a_port", [&](){
 			PhMidiOutput midiOut;
 			// test opening an unexisting midi port
