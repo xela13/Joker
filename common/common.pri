@@ -58,6 +58,7 @@ win32 {
 
 # MacOS specific
 mac {
+	MACOSX_DEPLOYMENT_TARGET = 10.8
 	app_bundle {
 		RESOURCES_PATH = $${TARGET}.app/Contents/Resources
 		DEFINES -= PATH_TO_RESSOURCES=\\\"\\\"
